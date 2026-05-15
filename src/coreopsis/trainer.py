@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
 """
-train a model
+classes supporting model training
 """
 
 import logging
 import pathlib
 
 from flwr.common.logger import log
-from transformers import (
-    EarlyStoppingCallback,
-    TrainingArguments,
-)
 from transformers import Trainer as t_Trainer
+from transformers import TrainingArguments
 
 from coreopsis.loader import Loader
 from cotorra.trainer import Trainer as CotorraTrainer
@@ -22,10 +19,7 @@ class TrainerWithCustomLoss(t_Trainer):
     def __init__(self, compute_loss_func=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.compute_loss_func = compute_loss_func
-        log(
-            logging.INFO,
-            f"Initialized TrainerWithCustomLoss with {compute_loss_func=}",
-        )
+        log(logging.INFO, f"Initialized {type(self)} with {compute_loss_func=}")
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         if self.compute_loss_func is not None:
@@ -38,10 +32,6 @@ class TrainerWithCustomLoss(t_Trainer):
 
 
 class Trainer(CotorraTrainer):
-    """the meds format dumps training (train), validation (tuning), and test (held_out)
-    data into the same file;
-    we need to start by fishing out training and validation data"""
-
     def __init__(
         self,
         main_cfg: pathlib.Path | str = None,
@@ -50,10 +40,7 @@ class Trainer(CotorraTrainer):
     ):
         super().__init__(main_cfg=main_cfg, mdl_cfg=mdl_cfg, **kwargs)
         self.loader = Loader(self.cfg, self.processed_data_home)
-        log(
-            logging.INFO,
-            f"Initialized Trainer with {self.cfg=}",
-        )
+        log(logging.INFO, f"Initialized {type(self)} with {self.cfg=}")
 
     def _make_trainer(self) -> TrainerWithCustomLoss:
         return TrainerWithCustomLoss(
@@ -65,7 +52,6 @@ class Trainer(CotorraTrainer):
             args=TrainingArguments(
                 output_dir=str(self.output_home), **self.cfg.training_args
             ),
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         )
 
 

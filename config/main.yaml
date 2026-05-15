@@ -5,14 +5,10 @@ output_home: ./output/mimic # where you can find trained models
 
 model_config: ./config/model/llama-32-lite.yaml
 max_seq_len: !!int &max_len 4096
-n_epochs: !!int 2
-run_name: &run_name cotorra-tuning
+n_epochs: !!int &n_epochs 1
+run_name: &run_name coreopsis
 
 tokens_of_interest: &tois
-  - XFR-IN//icu
-  - RESP//imv
-  - DSCG//expired
-  - DSCG//hospice
   - XFR-IN//icu
   - RESP//imv
   - DSCG//expired
@@ -36,7 +32,7 @@ wandb:
 
 custom_loss: !!bool true
 quantile_token_loss:
-  qt_weight: !!float 20.0
+  qt_weight: !!float 1.0
 label_weighted_loss:
   tokens_of_interest: *tois
   toi_weight: !!float 20.0
@@ -47,17 +43,18 @@ time_based_rope:
 training_args:
   report_to: wandb
   run_name: *run_name
-  per_device_train_batch_size: !!int 1
-  per_device_eval_batch_size: !!int 1
+  num_train_epochs: !!int 1
+  per_device_train_batch_size: !!int 4
+  per_device_eval_batch_size: !!int 4
   save_total_limit: !!int 1
   metric_for_best_model: eval_loss
   load_best_model_at_end: !!bool true
   greater_is_better: !!bool false
-  eval_strategy: steps
+  eval_strategy: epoch
   prediction_loss_only: !!bool true # may improve training speed
   save_strategy: epoch
-  evaluation_strategy: epoch
   ddp_find_unused_parameters: !!bool false
+  log_level: warning
   neftune_noise_alpha: !!float 5.0
   auto_find_batch_size: !!bool false # turning this on may cause issues with hyperparameter tuning
   learning_rate: !!float 2e-4

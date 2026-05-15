@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 """
-things clients do;
-note, new clients are created at the start of every round
+distributed things clients do;
+NB: new clients are created at the start of every round
 """
 
 import hashlib
@@ -33,15 +33,23 @@ class FlowerClient(NumPyClient):
         self.id = hashlib.md5(
             (f"{id(self)}-{self.created}").encode("utf-8")
         ).hexdigest()[:7]
-        self.pid = context.node_config["partition-id"]
+        self.context = context
+        self.pid = self.context.node_config["partition-id"]
         log(logging.INFO, f"Client {self.id} initialized (pid={self.pid})")
 
     def fit(self, parameters, config):
         set_weights(self.net, parameters)
         self.net.to(self.device)
-        log(logging.INFO, f"training {self.id} (pid={self.pid})...")
-        train(self.net, self.trainloader, self.testloader)
-        return get_weights(self.net), len(self.trainloader), {}
+        num_rounds = int(self.context.run_config["num-server-rounds"])
+        round_num = config.get("server_round", 1)
+        shard = self.trainloader.shard(num_shards=num_rounds, index=round_num - 1)
+        log(
+            logging.INFO,
+            f"training {self.id} (pid={self.pid}), round {round_num}/{num_rounds}, "
+            f"{len(shard)} examples...",
+        )
+        train(self.net, shard, self.testloader)
+        return get_weights(self.net), len(shard), {}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)

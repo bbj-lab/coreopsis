@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 """
-utilities
+functional utilities used by the server and clients
 """
 
 import collections
 import pathlib
 
 import torch
-from transformers import EarlyStoppingCallback, TrainingArguments
+from transformers import TrainingArguments
 
 from coreopsis.loader import Loader
 from coreopsis.trainer import Trainer as c_Trainer
@@ -41,7 +41,6 @@ def train(net, trainloader, testloader):
         train_dataset=trainloader,
         eval_dataset=testloader,
         args=TrainingArguments(output_dir=str(_c.output_home), **_c.cfg.training_args),
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
     trainer.train()
 

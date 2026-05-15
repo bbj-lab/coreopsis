@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-things the server does
+centralized things the server does
 """
 
 import logging
@@ -29,6 +29,7 @@ def server_fn(context: Context):
         initial_parameters=initial_parameters,
         net=net,
         context=context,
+        on_fit_config_fn=lambda server_round: {"server_round": server_round},
     )
     config = ServerConfig(num_rounds=context.run_config["num-server-rounds"])
 

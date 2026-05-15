@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-a version of FedAvg that saves the model each round
+a version of FedAvg that saves the model after each training round
 """
 
 import pathlib

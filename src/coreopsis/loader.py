@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-load data and prepare for training / evaluation
+data loader that supports partitioning
 """
 
 import pathlib

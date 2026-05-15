@@ -2,8 +2,8 @@
 
 > 🌼 over 89 types of coreopsis have been planted in Chicago
 
-This [flower](https://flower.ai) app trains a foundation model in a federated
-manner.
+This [flower](https://flower.ai) app trains a foundation model on tokenized
+electronic health records in a federated manner.
 
 ## Install
 
@@ -24,8 +24,9 @@ pip install -e . \
 This repo provides a configurable flower app for the federated training of
 generative event models (GEMs) on electronic health records (EHRs). In 1989, "the
 Chicago Botanic Garden created a garden solely to compare perennials, and
-_coreopsis_ was one of the inaugural trials." [^1] The Lavin Plant Evaluation
-Garden remains open to this day.
+_coreopsis_ was one of the inaugural trials." [^1] The
+[Lavin Plant Evaluation Garden](https://www.chicagobotanic.org/gardens/planteval)
+remains open to this day.
 
 ## Run training
 
@@ -33,6 +34,160 @@ Garden remains open to this day.
 tmux new -s co || tmux a -t co
 . .venv/bin/activate
 flwr run . | tee "logs/$(date --iso-8601=minutes).stddout"
+```
+
+## Configuration
+
+### Flower app (`pyproject.toml`)
+
+The `[tool.flwr.app.config]` table controls top-level training behaviour:
+
+| Key                 | Default     | Description                                                         |
+| ------------------- | ----------- | ------------------------------------------------------------------- |
+| `model-dir`         | `./output/` | Directory where checkpoints and the final federated model are saved |
+| `num-server-rounds` | `10`        | Number of federated averaging rounds                                |
+
+Federations are defined under `[tool.flwr.federations]`. Two are provided out of
+the box:
+
+| Federation            | `num-supernodes` | CPUs per node | GPUs per node |
+| --------------------- | ---------------- | ------------- | ------------- |
+| `minimal` _(default)_ | 3                | 1             | 0.3           |
+| `standard`            | 4                | 2             | 1.0           |
+
+Run a specific federation with `flwr run . <federation-name>`. Add new
+federations by adding a `[tool.flwr.federations.<name>]` block with the same
+`options.*` keys.
+
+### Main configuration ([example](config/main.yaml))
+
+_These mirror the ones
+[found in cotorra](https://github.com/bbj-lab/cotorra#configuration)._
+
+- **processed_data_home**: Path to processed data (tokenized timelines, splits,
+  tokenizer config).
+- **output_home**: Directory to save model outputs and checkpoints.
+- **model_config**: Path to the model configuration YAML (e.g.,
+  config/model/llama-32-lite.yaml). [see below]
+- **max_seq_len**: Maximum sequence length for model input.
+- **n_epochs**: Number of epochs (handled in the dataloader, not the trainer).
+- **run_name**: Name for the current run (referenced by `wandb` and
+  `training_args`).
+- **tokens_of_interest**: List of special tokens to upweight during training
+  (referenced by loss config).
+- **wandb**:
+  - **project**: Weights & Biases project name for experiment tracking.
+  - **run_name**: Name for the current run.
+- **custom_loss**: Boolean flag to enable custom loss functions (default:
+  `false`).
+- **quantile_token_loss** _(optional)_: Upweights loss on quantile boundary
+  tokens.
+  - **qt_weight**: Weight multiplier for quantile tokens.
+- **label_weighted_loss** _(optional)_: Upweights loss on specific tokens of
+  clinical interest.
+  - **tokens_of_interest**: List of token labels to upweight.
+  - **toi_weight**: Weight multiplier applied to those tokens.
+- **time_based_rope** _(optional)_: Enables time-aware rotary position
+  embeddings.
+  - **sec_per_pos_id**: Number of seconds represented by one position id
+    increment.
+- **training_args**: Arguments passed to HuggingFace's
+  [`TrainingArguments`](https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments)
+
+### Model configuration ([example](config/model/llama-32-lite.yaml))
+
+_[Also as in cotorra](https://github.com/bbj-lab/cotorra#model-configuration-example)._
+
+- **model_name**: Name or path of the model (e.g., meta-llama/Llama-3.2-1B).
+- **model_args**: Model architecture parameters passed directly to HuggingFace's
+  [`AutoConfig`](https://huggingface.co/docs/transformers/en/model_doc/auto)
+  object
+
+## Training ecosystem
+
+This is the federated component of a series of libraries dedicated to
+configurable collation and training:
+
+- ☕️ [cocoa](https://github.com/bbj-lab/cocoa): configurable collation and
+  tokenization
+- 🦜 [cotorra](https://github.com/bbj-lab/cotorra): configurable training and
+  inference (non-federated)
+- 🌼 coreopsis: _this library_
+
+### CLI
+
+Flower provides a CLI:
+
+```
+ Usage: flwr [OPTIONS] COMMAND [ARGS]...
+
+ flwr is the Flower command line interface.
+
+╭─ Options ───────────────────────────────────────────────────────────────────╮
+│ --version             -V        Show the version and exit.                  │
+│ --install-completion            Install completion for the current shell.   │
+│ --show-completion               Show completion for the current shell, to   │
+│                                 copy it or customize the installation.      │
+│ --help                -h        Show this message and exit.                 │
+╰─────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ──────────────────────────────────────────────────────────────────╮
+│ build     Build a Flower App into a Flower App Bundle (FAB).                │
+│ install   Install a Flower App Bundle.                                      │
+│ log       Get logs from a Flower project run.                               │
+│ login     Login to Flower SuperLink.                                        │
+│ ls        List the details of one provided run ID or all runs in a Flower   │
+│           federation.                                                       │
+│ new       Create new Flower App.                                            │
+│ run       Run Flower App.                                                   │
+│ stop      Stop a run.                                                       │
+╰─────────────────────────────────────────────────────────────────────────────╯
+```
+
+The primary command to call is `flwr run` with documentation as follows:
+
+```
+ Usage: flwr run [OPTIONS] [APP] [FEDERATION]
+
+ Run Flower App.
+
+╭─ Arguments ─────────────────────────────────────────────────────────────────╮
+│   app             [APP]         Path of the Flower App to run. [default: .] │
+│   federation      [FEDERATION]  Name of the federation to run the app on.   │
+│                                 [default: None]                             │
+╰─────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ───────────────────────────────────────────────────────────────────╮
+│ --run-config         -c      TEXT  Override run configuration values in the │
+│                                    format:                                  │
+│                                    `--run-config 'key1=value1 key2=value2'  │
+│                                    --run-config 'key3=value3'`              │
+│                                    Values can be of any type supported in   │
+│                                    TOML, such as bool, int, float, or       │
+│                                    string. Ensure that the keys (`key1`,    │
+│                                    `key2`, `key3` in this example) exist in │
+│                                    `pyproject.toml` for proper overriding.  │
+│                                    [default: None]                          │
+│ --federation-config          TEXT  Override federation configuration values │
+│                                    in the format:                           │
+│                                    `--federation-config 'key1=value1        │
+│                                    key2=value2' --federation-config         │
+│                                    'key3=value3'`                           │
+│                                    Values can be of any type supported in   │
+│                                    TOML, such as bool, int, float, or       │
+│                                    string. Ensure that the keys (`key1`,    │
+│                                    `key2`, `key3` in this example) exist in │
+│                                    the federation configuration under the   │
+│                                    `[tool.flwr.federations.<YOUR_FEDERATIO… │
+│                                    table of the `pyproject.toml` for proper │
+│                                    overriding.                              │
+│                                    [default: None]                          │
+│ --stream                           Use `--stream` with `flwr run` to        │
+│                                    display logs; logs are not streamed by   │
+│                                    default.                                 │
+│ --format                     TEXT  Format output using 'default' view or    │
+│                                    'json'                                   │
+│                                    [default: default]                       │
+│ --help               -h            Show this message and exit.              │
+╰─────────────────────────────────────────────────────────────────────────────╯
 ```
 
 [^1]:
