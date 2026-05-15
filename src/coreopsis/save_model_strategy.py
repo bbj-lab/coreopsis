@@ -12,7 +12,12 @@ import transformers
 from coreopsis.task import set_weights
 
 
-class SaveFedAvg(fl.server.strategy.FedAvg):
+class SaveModelMixin(fl.server.strategy.Strategy):
+    """
+    Mixin to save a copy of the model after each aggregation round;
+    can be combined with any fl.server.strategy
+    """
+
     def __init__(
         self,
         *args,
@@ -36,3 +41,15 @@ class SaveFedAvg(fl.server.strategy.FedAvg):
         )
 
         return aggregated_parameters, aggregated_metrics
+
+
+class SaveFedAvg(SaveModelMixin, fl.server.strategy.FedAvg):
+    pass
+
+
+class SaveFedProx(SaveModelMixin, fl.server.strategy.FedProx):
+    pass
+
+
+class SaveFedAvgM(SaveModelMixin, fl.server.strategy.FedAvgM):
+    pass

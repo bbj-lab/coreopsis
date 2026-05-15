@@ -4,10 +4,8 @@
 classes supporting model training
 """
 
-import logging
 import pathlib
 
-from flwr.common.logger import log
 from transformers import Trainer as t_Trainer
 from transformers import TrainingArguments
 
@@ -19,7 +17,6 @@ class TrainerWithCustomLoss(t_Trainer):
     def __init__(self, compute_loss_func=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.compute_loss_func = compute_loss_func
-        log(logging.INFO, f"Initialized {type(self)} with {compute_loss_func=}")
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         if self.compute_loss_func is not None:
@@ -40,7 +37,6 @@ class Trainer(CotorraTrainer):
     ):
         super().__init__(main_cfg=main_cfg, mdl_cfg=mdl_cfg, **kwargs)
         self.loader = Loader(self.cfg, self.processed_data_home)
-        log(logging.INFO, f"Initialized {type(self)} with {self.cfg=}")
 
     def _make_trainer(self) -> TrainerWithCustomLoss:
         return TrainerWithCustomLoss(

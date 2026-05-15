@@ -61,7 +61,7 @@ class FlowerClient(NumPyClient):
 
 def client_fn(context: Context):
     trainloader, valloader = load_data(
-        context.node_config["partition-id"], context.node_config["num-partitions"]
+        context.node_config["num-partitions"], context.node_config["partition-id"]
     )
     return FlowerClient(get_net(), trainloader, valloader, context).to_client()
 

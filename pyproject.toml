@@ -45,6 +45,7 @@
         serverapp = "coreopsis.server_app:app"
 
     [tool.flwr.app.config]
+        fed-strategy      = "FedAvgM"   # options: FedAvg, FedProx, FedAvgM
         model-dir         = "./output/"
         num-server-rounds = 3
 

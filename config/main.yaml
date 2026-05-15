@@ -27,7 +27,7 @@ tokens_of_interest: &tois
   - ASMT//cam_total_yes
 
 wandb:
-  project: cotorra
+  project: coreopsis
   run_name: *run_name
 
 custom_loss: !!bool true

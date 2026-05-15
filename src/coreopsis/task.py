@@ -15,7 +15,7 @@ from coreopsis.trainer import Trainer as c_Trainer
 from coreopsis.trainer import TrainerWithCustomLoss
 
 
-def load_data(partition_id: int, num_partitions: int):
+def load_data(num_partitions: int, partition_id: int):
     """partition MIMIC into `num_partitions-1` parts of similar size and load UCMC
     as partition number `num-partitions-1`"""
     if partition_id < num_partitions - 1:
@@ -68,3 +68,4 @@ def set_weights(net, parameters):
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = collections.OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
+    net.tie_weights()
