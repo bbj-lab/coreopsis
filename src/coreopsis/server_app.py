@@ -4,6 +4,7 @@
 centralized things the server does
 """
 
+import json
 import logging
 
 from flwr.common import Context, ndarrays_to_parameters
@@ -11,17 +12,18 @@ from flwr.common.logger import log
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 
 import coreopsis.save_model_strategy as save_strategy
-from coreopsis.task import get_weights
-from coreopsis.trainer import Trainer
+from coreopsis.task import get_weights, unpack_context
+from cotorra.trainer import Trainer
 
 
 def server_fn(context: Context):
 
     log(logging.INFO, f"{context.run_config=}")
 
-    net = Trainer().model_init()
-    weights = get_weights(net)
-    initial_parameters = ndarrays_to_parameters(weights)
+    dset = json.loads(context.run_config["datasets"]).pop()
+    training_cfg, processed_data_dir, output_home = unpack_context(context)
+    net = Trainer(training_cfg, processed_data_dir / dset, output_home).model_init()
+    initial_parameters = ndarrays_to_parameters(get_weights(net))
 
     fed_strategy = context.run_config.get("fed-strategy", "FedAvg")
     strategy = getattr(save_strategy, f"Save{fed_strategy}")(

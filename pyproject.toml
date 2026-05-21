@@ -52,9 +52,12 @@
         serverapp = "coreopsis.server_app:app"
 
     [tool.flwr.app.config]
-        fed-strategy      = "FedAvgM"   # options: FedAvg, FedProx, FedAvgM
-        model-dir         = "./output/"
-        num-server-rounds = 3
+        datasets           = '["mimic-pre14","mimic-post14","ucmc-first"]'
+        fed-strategy       = "FedAvgM"                                     # options: FedAvg, FedProx, FedAvgM
+        num-server-rounds  = 3
+        output-home        = "./output/"
+        processed-data-dir = "./processed/"
+        training-config    = "./src/coreopsis/config/training.yaml"
 
 [tool.flwr.federations]
     default = "minimal"

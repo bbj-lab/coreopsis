@@ -4,12 +4,10 @@
 a version of FedAvg that saves the model after each training round
 """
 
-import pathlib
-
 import flwr as fl
 import transformers
 
-from coreopsis.task import set_weights
+from coreopsis.task import set_weights, unpack_context
 
 
 class SaveModelMixin(fl.server.strategy.Strategy):
@@ -35,10 +33,8 @@ class SaveModelMixin(fl.server.strategy.Strategy):
         )
 
         set_weights(self.net, fl.common.parameters_to_ndarrays(aggregated_parameters))
-        self.net.save_pretrained(
-            pathlib.Path(self.context.run_config["model-dir"]).expanduser().resolve()
-            / f"fms-flw-round-{server_round}"
-        )
+        *_, output_home = unpack_context(self.context)
+        self.net.save_pretrained(output_home / f"coreopsis-round-{server_round}")
 
         return aggregated_parameters, aggregated_metrics
 

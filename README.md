@@ -44,7 +44,7 @@ The `[tool.flwr.app.config]` table controls top-level training behaviour:
 
 | Key                 | Default     | Description                                                         |
 | ------------------- | ----------- | ------------------------------------------------------------------- |
-| `model-dir`         | `./output/` | Directory where checkpoints and the final federated model are saved |
+| `output-home`       | `./output/` | Directory where checkpoints and the final federated model are saved |
 | `num-server-rounds` | `10`        | Number of federated averaging rounds                                |
 
 Federations are defined under `[tool.flwr.federations]`. Two are provided out of
