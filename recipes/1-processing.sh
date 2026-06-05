@@ -38,6 +38,13 @@ for ds in "${dsets[@]}"; do
 		--processed-data-home ./processed/${ds}
 done
 
+# create a combined dataset
+cocoa combine-datasets \
+	"${dsets[@]/#/./processed/}" \
+	--output-data-dir ./processed/all
+
+dsets+=('all')
+
 # train separate models on each dataset
 for ds in "${dsets[@]}"; do
 	cotorra train \
@@ -53,6 +60,17 @@ coreopsis run . standard \
 				 'fed-strategy'='FedAvg'
 		         'output-home'='./output/fedavg10'
 		         'num-server-rounds'=10
+				 'datasets'='["mimic-pre14","mimic-post14","ucmc-first"]'
+				 "
+
+# try momentum
+coreopsis run . standard \
+	--stream \
+	--run-config "
+				 'fed-strategy'='FedAvgM'
+		         'output-home'='./output/fedavgm10'
+		         'num-server-rounds'=10
+				 'datasets'='["mimic-pre14","mimic-post14","ucmc-first"]'
 				 "
 
 # extract reps for each dataset, for each model
@@ -66,15 +84,6 @@ for ds in "${dsets[@]}"; do
 			--processed-data-home ./processed/${ds} \
 			--model-home ./output/${mdl} \
 			--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
-	done
-done
-
-# make predictions for each dataset, for each model
-for ds in "${dsets[@]}"; do
-	for mdl in "fedavg10/coreopsis-round-10" \
-		"mimic-pre14/mdl-coreopsis-training" \
-		"mimic-post14/mdl-coreopsis-training" \
-		"ucmc-first/mdl-coreopsis-training"; do
 		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
 		cotorra rep-based-score \
 			--scoring-config ${config_home}/scoring.yaml \

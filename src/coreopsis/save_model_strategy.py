@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-a version of FedAvg that saves the model after each training round
+a version of FedAvg(M) that saves the model after each training round
 """
 
 import flwr as fl
