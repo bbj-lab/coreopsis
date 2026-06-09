@@ -1,7 +1,8 @@
 # Coreopsis: choreographed training with flower
 
-> 🌼 over 89 types of coreopsis have called Chicago home
+> 🌼 over 89 varieties of coreopsis have called Chicago home
 
+<p align="center">
 <img src="img/coreopsis.png" alt="cocoa bean" width="400" style="display: block;
 margin: 0 auto; -webkit-mask-image: radial-gradient(
     ellipse at center,
@@ -13,6 +14,7 @@ margin: 0 auto; -webkit-mask-image: radial-gradient(
     rgba(0,0,0,1) 50%,
     rgba(0,0,0,0) 100%
   );"/>
+</p>
 
 ## About
 

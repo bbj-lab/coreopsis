@@ -60,7 +60,7 @@ coreopsis run . standard \
 				 'fed-strategy'='FedAvg'
 		         'output-home'='./output/fedavg10'
 		         'num-server-rounds'=10
-				 'datasets'='["mimic-pre14","mimic-post14","ucmc-first"]'
+				 'datasets'='[\"mimic-pre14\",\"mimic-post14\",\"ucmc-first\"]'
 				 "
 
 # try momentum
@@ -70,15 +70,17 @@ coreopsis run . standard \
 				 'fed-strategy'='FedAvgM'
 		         'output-home'='./output/fedavgm10'
 		         'num-server-rounds'=10
-				 'datasets'='["mimic-pre14","mimic-post14","ucmc-first"]'
+				 'datasets'='[\"mimic-pre14\",\"mimic-post14\",\"ucmc-first\"]'
 				 "
 
 # extract reps for each dataset, for each model
 for ds in "${dsets[@]}"; do
-	for mdl in "fedavg10/coreopsis-round-10" \
-		"mimic-pre14/mdl-coreopsis-training" \
-		"mimic-post14/mdl-coreopsis-training" \
-		"ucmc-first/mdl-coreopsis-training"; do
+	for mdl in "fedavg10/checkpoint-2820" \
+		"fedavgm10/checkpoint-4230" \
+		"mimic-pre14/checkpoint-5037" \
+		"mimic-post14/checkpoint-8412" \
+		"ucmc-first/checkpoint-42300" \
+		"all/checkpoint-46008"; do
 		cotorra extract \
 			--extraction-config ${config_home}/extraction.yaml \
 			--processed-data-home ./processed/${ds} \
@@ -88,7 +90,6 @@ for ds in "${dsets[@]}"; do
 		cotorra rep-based-score \
 			--scoring-config ${config_home}/scoring.yaml \
 			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
-			--model-home ./output/${mdl} \
-			--verbose
+			--model-home ./output/${mdl}
 	done
 done

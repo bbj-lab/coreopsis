@@ -33,6 +33,11 @@ def server_fn(context: Context):
         net=net,
         context=context,
         on_fit_config_fn=lambda server_round: {"server_round": server_round},
+        **(
+            {"server_learning_rate": 1.0, "server_momentum": 0.1}
+            if fed_strategy == "FedAvgM"
+            else {}
+        ),
     )
     config = ServerConfig(num_rounds=context.run_config["num-server-rounds"])
 

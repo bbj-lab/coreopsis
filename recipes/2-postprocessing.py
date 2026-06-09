@@ -15,8 +15,8 @@ from cotorra.util import bootstrap_ci
 
 hm = pathlib.Path("~/coreopsis").expanduser().resolve()
 
-dsets = ["mimic-pre14", "mimic-post14", "ucmc-first"]
-mdls = [f"mdl-{ds}" for ds in dsets] + ["mdl-fedavg10"]
+dsets = ["mimic-pre14", "mimic-post14", "ucmc-first", "all"]
+mdls = [f"mdl-{ds}" for ds in dsets] + ["mdl-fedavg10", "mdl-fedavgm10"]
 tois = OmegaConf.load(hm / "src" / "coreopsis" / "config" / "scoring.yaml")[
     "tokens_of_interest"
 ]
