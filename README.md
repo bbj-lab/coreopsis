@@ -1,7 +1,3 @@
-# Coreopsis: choreographed training with flower
-
-> 🌼 over 89 varieties of coreopsis have called Chicago home
-
 <p align="center">
 <img src="img/coreopsis.png" alt="cocoa bean" width="400" style="display: block;
 margin: 0 auto; -webkit-mask-image: radial-gradient(
@@ -15,6 +11,10 @@ margin: 0 auto; -webkit-mask-image: radial-gradient(
     rgba(0,0,0,0) 100%
   );"/>
 </p>
+
+# Coreopsis: choreographed training with flower
+
+> 🌼 over 89 varieties of coreopsis have called Chicago home
 
 ## About
 
@@ -56,7 +56,7 @@ The `[tool.flwr.app.config]` table controls top-level training behaviour:
 | Key                  | Default                                         | Description                                                            |
 | -------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
 | `datasets`           | `'["mimic-pre14","mimic-post14","ucmc-first"]'` | JSON array of dataset names, one per client partition                  |
-| `fed-strategy`       | `"FedAvgM"`                                     | Federated averaging strategy (`FedAvg` or `FedAvgM`)                   |
+| `fed-strategy`       | `"FedAvg"`                                      | Federated averaging strategy (`FedAvg` or `FedAvgM`)                   |
 | `num-server-rounds`  | `3`                                             | Number of federated averaging rounds                                   |
 | `output-home`        | `./output/`                                     | Directory where checkpoints and the final federated model are saved    |
 | `processed-data-dir` | `./processed/`                                  | Path to processed data (tokenized timelines, splits, tokenizer config) |

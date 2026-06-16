@@ -12,8 +12,8 @@
     dependencies = [
         "accelerate==0.34.2",
         "click<8.2",
-        "cocoa @ git+https://github.com/burkh4rt/cocoa.git",
-        "cotorra @ git+https://github.com/burkh4rt/cotorra.git@dev-rep-based-estimators",
+        "cocoa @ git+https://github.com/burkh4rt/cocoa.git@dev-labels-demographics",
+        "cotorra @ git+https://github.com/burkh4rt/cotorra.git",
         "flwr[simulation]==1.18.0",
         "huggingface_hub>=0.23.2,<1.0",
         "protobuf==4.25.3",
@@ -33,7 +33,7 @@
     name = "coreopsis"
     readme = { file = "README.md", content-type = "text/markdown" }
     requires-python = ">=3.11"
-    version = "26.5.0"
+    version = "26.5.1"
 
     [project.scripts]
         coreopsis = "coreopsis.cli:main"
@@ -57,7 +57,7 @@
 
     [tool.flwr.app.config]
         datasets           = '["mimic-pre14","mimic-post14","ucmc-first"]'
-        fed-strategy       = "FedAvgM"                                     # options: FedAvg, FedAvgM, FedAdam
+        fed-strategy       = "FedAvg"                                      # options: FedAvg, FedAvgM, FedAdam
         num-server-rounds  = 3
         output-home        = "./output/"
         processed-data-dir = "./processed/"

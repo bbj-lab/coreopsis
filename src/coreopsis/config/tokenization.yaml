@@ -27,6 +27,7 @@ ordering:
   - CRRT
   - SOFA
   - DSCG
+  - LABEL
   - EOS
 
 insert_spacers: !!bool false
