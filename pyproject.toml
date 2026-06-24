@@ -12,7 +12,7 @@
     dependencies = [
         "accelerate==0.34.2",
         "click<8.2",
-        "cocoa @ git+https://github.com/burkh4rt/cocoa.git@dev-labels-demographics",
+        "cocoa @ git+https://github.com/burkh4rt/cocoa.git",
         "cotorra @ git+https://github.com/burkh4rt/cotorra.git",
         "flwr[simulation]==1.18.0",
         "huggingface_hub>=0.23.2,<1.0",
@@ -80,8 +80,8 @@
 
     [tool.flwr.federations.standard]
         options.backend.client-resources.num-cpus = 2
-        options.backend.client-resources.num-gpus = 1
-        options.num-supernodes                    = 3
+        options.backend.client-resources.num-gpus = 0.1
+        options.num-supernodes                    = 11
 
 [tool.ruff]
     extend-exclude = [ "*.md" ]

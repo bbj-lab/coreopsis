@@ -33,6 +33,7 @@ class FlowerClient(NumPyClient):
         self.ct = (TrainerDP if self.is_private else Trainer)(
             training_cfg, processed_data_dir / self.dset, output_home
         )
+        self.ct.trainer.model_init = None
         self.model = getattr(self.ct.trainer.model, "_module", self.ct.trainer.model)
 
         self.created = time.time()
