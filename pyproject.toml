@@ -58,15 +58,18 @@
 
     [tool.flwr.app.config]
         datasets           = '["mimic-pre14","mimic-post14","ucmc-first"]'
-        diff-priv          = 1                                             # 1 for true, 0 for false
+        diff-priv-client   = 0                                             # 1 for true, 0 for false
+        diff-priv-server   = 1
         fed-strategy       = "FedAvg"                                      # options: FedAvg, FedAvgM, FedAdam
-        num-server-rounds  = 3
+        max-grad-norm      = 1.0
+        noise-multiplier   = 1.5
+        num-server-rounds  = 10
         output-home        = "./output/"
         processed-data-dir = "./processed/"
         training-config    = "./src/coreopsis/config/training.yaml"
 
 [tool.flwr.federations]
-    default = "minimal"
+    default = "standard"
 
     [tool.flwr.federations.local]
         options.backend.client-resources.num-cpus = 0.3

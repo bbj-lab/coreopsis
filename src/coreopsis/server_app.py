@@ -10,6 +10,9 @@ import logging
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.common.logger import log
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
+from flwr.server.strategy.dp_fixed_clipping import (
+    DifferentialPrivacyServerSideFixedClipping,
+)
 
 import coreopsis.save_model_strategy as save_strategy
 from coreopsis.task import get_weights, unpack_context
@@ -39,6 +42,13 @@ def server_fn(context: Context):
             else {}
         ),
     )
+    if context.run_config.get("diff-priv-server", 0):
+        strategy = DifferentialPrivacyServerSideFixedClipping(
+            strategy,
+            noise_multiplier=context.run_config.get("noise-multiplier", 1.5),
+            clipping_norm=context.run_config.get("max-grad-norm", 1.0),
+            num_sampled_clients=len(json.loads(context.run_config["datasets"])),
+        )
     config = ServerConfig(num_rounds=context.run_config["num-server-rounds"])
 
     return ServerAppComponents(strategy=strategy, config=config)

@@ -64,31 +64,18 @@ coreopsis run . standard \
 	--stream \
 	--run-config "
 				 'fed-strategy'='FedAvg'
-		         'output-home'='./output/fedavg10'
+		         'output-home'='./output/fedavg10-ps'
 		         'num-server-rounds'=10
 				 'datasets'='[$dsets_cfg]'
-				 'diff-priv'=1
-				 "
-
-# run federated learning
-coreopsis run . standard \
-	--stream \
-	--run-config "
-				 'fed-strategy'='FedAvg'
-		         'output-home'='./output/fedavg10'
-		         'num-server-rounds'=10
-				 'datasets'='[$dsets_cfg]'
-				 "
-
-# 3 rounds
-coreopsis run . standard \
-	--stream \
-	--run-config "
-				 'fed-strategy'='FedAvg'
-		         'output-home'='./output/fedavg3'
-		         'num-server-rounds'=3
-				 'datasets'='[$dsets_cfg]'
-				 "
+				 'diff-priv-server'=1
+				 'max-grad-norm'=1.0
+                 'noise-multiplier'=1.5
+				 " \
+	--federation-config "
+						options.num-supernodes=$((${#dsets[@]} - 1))
+						options.backend.client-resources.num-cpus = 1
+        				options.backend.client-resources.num-gpus = 0.1
+						"
 
 # # try momentum
 # coreopsis run . standard \
@@ -153,20 +140,18 @@ done
 
 python3 postprocessing.py
 
-mdls_p=("${dsets[@]/%/-p/mdl-cotorra}")
+mdl=fedavg10-p/coreopsis-round-10
 for ds in "${dsets[@]}"; do
-	for mdl in "${mdls_p[@]}"; do
-		cotorra extract \
-			--extraction-config ${config_home}/extraction.yaml \
-			--processed-data-home ./processed/${ds} \
-			--model-home ./output/${mdl} \
-			--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
-		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
-		cotorra rep-based-score \
-			--scoring-config ${config_home}/scoring.yaml \
-			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
-			--model-home ./output/${mdl} \
-			--estimator logistic-CV \
-			--verbose
-	done
+	cotorra extract \
+		--extraction-config ${config_home}/extraction.yaml \
+		--processed-data-home ./processed/${ds} \
+		--model-home ./output/${mdl} \
+		--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
+	cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
+	cotorra rep-based-score \
+		--scoring-config ${config_home}/scoring.yaml \
+		--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
+		--model-home ./output/${mdl} \
+		--estimator logistic-CV \
+		--verbose
 done
