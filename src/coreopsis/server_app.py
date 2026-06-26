@@ -29,9 +29,11 @@ def server_fn(context: Context):
     initial_parameters = ndarrays_to_parameters(get_weights(net))
 
     fed_strategy = context.run_config.get("fed-strategy", "FedAvg")
+    num_clients = len(json.loads(context.run_config["datasets"]))
+    fraction_fit = context.run_config.get("fraction-fit", 1.0)
     strategy = getattr(save_strategy, f"Save{fed_strategy}")(
-        fraction_fit=1.0,  # Fraction of clients used during training
-        fraction_evaluate=1.0,  # Fraction of clients used during validation
+        fraction_fit=fraction_fit,
+        fraction_evaluate=context.run_config.get("fraction-evaluate", 1.0),
         initial_parameters=initial_parameters,
         net=net,
         context=context,
@@ -43,11 +45,12 @@ def server_fn(context: Context):
         ),
     )
     if context.run_config.get("diff-priv-server", 0):
+        num_sampled_clients = max(1, round(fraction_fit * num_clients))
         strategy = DifferentialPrivacyServerSideFixedClipping(
             strategy,
             noise_multiplier=context.run_config.get("noise-multiplier", 1.5),
             clipping_norm=context.run_config.get("max-grad-norm", 1.0),
-            num_sampled_clients=len(json.loads(context.run_config["datasets"])),
+            num_sampled_clients=num_sampled_clients,
         )
     config = ServerConfig(num_rounds=context.run_config["num-server-rounds"])
 

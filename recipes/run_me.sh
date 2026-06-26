@@ -48,7 +48,8 @@ for ds in "${dsets[@]}"; do
 	cotorra train \
 		--training-config ${config_home}/training.yaml \
 		--processed-data-home ./processed/${ds} \
-		--output-home ./output/${ds}
+		--output-home ./output/${ds} \
+		2>&1 | tee ./logs/training-${ds}.log
 done
 
 # train separate models on each dataset
@@ -56,10 +57,27 @@ for ds in "${dsets[@]}"; do
 	cotorra train-private \
 		--training-config ${config_home}/training.yaml \
 		--processed-data-home ./processed/${ds} \
-		--output-home ./output/${ds}-p
+		--output-home ./output/${ds}-p \
+		2>&1 | tee ./logs/training-${ds}-p.log
 done
 
 # run federated learning
+coreopsis run . standard \
+	--stream \
+	--run-config "
+				 'fed-strategy'='FedAvg'
+				 'output-home'='./output/fedavg10'
+				 'num-server-rounds'=10
+				 'datasets'='[$dsets_cfg]'
+				 " \
+	--federation-config "
+						options.num-supernodes=$((${#dsets[@]} - 1))
+						options.backend.client-resources.num-cpus=1
+						options.backend.client-resources.num-gpus=1
+						" \
+	2>&1 | tee ./logs/training-fedavg10.log
+
+# run federated learning with server-side privacy
 coreopsis run . standard \
 	--stream \
 	--run-config "
@@ -73,9 +91,10 @@ coreopsis run . standard \
 				 " \
 	--federation-config "
 						options.num-supernodes=$((${#dsets[@]} - 1))
-						options.backend.client-resources.num-cpus = 1
-        				options.backend.client-resources.num-gpus = 0.1
-						"
+						options.backend.client-resources.num-cpus=1
+						options.backend.client-resources.num-gpus=1
+						" \
+	2>&1 | tee ./logs/training-fedavg10-ps.log
 
 # # try momentum
 # coreopsis run . standard \
@@ -98,9 +117,9 @@ coreopsis run . standard \
 # 				 "
 
 mdls=(
-	"${dsets[@]/%//mdl-cotorra}"
-	fedavg10/coreopsis-round-10
-	fedavg3/coreopsis-round-3
+	"${dsets[@]/%/-p/mdl-cotorra}"
+	# fedavg10/coreopsis-round-10
+	# fedavg3/coreopsis-round-3
 )
 
 # extract reps for each dataset, for each model
@@ -116,42 +135,10 @@ for ds in "${dsets[@]}"; do
 			--scoring-config ${config_home}/scoring.yaml \
 			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
 			--model-home ./output/${mdl} \
-			--estimator logistic \
-			--verbose
-	done
-done
-
-for ds in "${dsets[@]}"; do
-	for mdl in "${mdls[@]}"; do
-		cotorra rep-based-score \
-			--scoring-config ${config_home}/scoring.yaml \
-			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
-			--model-home ./output/${mdl} \
 			--estimator logistic-CV \
-			--verbose
-	done
-done
-
-for ds in "${dsets[@]}"; do
-	for mdl in "${mdls[@]}"; do
-		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
+			--verbose \
+			2>&1 | tee "./logs/scoring-ds-${ds}-mdl-$(dirname ${mdl}).log"
 	done
 done
 
 python3 postprocessing.py
-
-mdl=fedavg10-p/coreopsis-round-10
-for ds in "${dsets[@]}"; do
-	cotorra extract \
-		--extraction-config ${config_home}/extraction.yaml \
-		--processed-data-home ./processed/${ds} \
-		--model-home ./output/${mdl} \
-		--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
-	cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
-	cotorra rep-based-score \
-		--scoring-config ${config_home}/scoring.yaml \
-		--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
-		--model-home ./output/${mdl} \
-		--estimator logistic-CV \
-		--verbose
-done
