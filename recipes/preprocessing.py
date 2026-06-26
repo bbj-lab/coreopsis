@@ -6,6 +6,7 @@ load MIMIC / UCMC and split first hospitalizations by date
 
 import os
 import pathlib
+import shutil
 
 import polars as pl
 
@@ -57,33 +58,42 @@ for k, v in {
             ).sink_parquet(data_raw / f"mimic-{k}" / f.name)
 
 
-clif_ucmc = data_raw / "ucmc-2.1.0"
+"""
+partition UCMC & Northwestern by admission year
+"""
 
-df = (
-    pl.read_parquet(data_raw / "ucmc-2.1.0" / "clif_hospitalization.parquet")
-    .sort(pl.col("admission_dttm"))
-    .group_by("patient_id")
-    .first()
-)
-for k, v in {
-    "18": 2018,
-    "19": 2019,
-    "20": 2020,
-    "21": 2021,
-    "22": 2022,
-    "23": 2023,
-    "24": 2024,
-}.items():
-    (data_raw / f"ucmc-{k}").mkdir(exist_ok=True)
-    grp = df.filter(pl.col("admission_dttm").dt.year() == v)
-    for f in (data_raw / "ucmc-2.1.0").glob("*.parquet"):
-        try:
-            pl.scan_parquet(f).cast({"hospitalization_id": str}).join(
-                grp.select("hospitalization_id").lazy(),
-                on="hospitalization_id",
-                validate="m:1",
-            ).sink_parquet(data_raw / f"ucmc-{k}" / f.name)
-        except pl.exceptions.ColumnNotFoundError:
-            pl.scan_parquet(f).join(
-                grp.select("patient_id").lazy(), on="patient_id", validate="m:1"
-            ).sink_parquet(data_raw / f"ucmc-{k}" / f.name)
+for h in ("ucmc", "nu"):
+    df = (
+        pl.read_parquet(data_raw / f"{h}-2.1.0" / "clif_hospitalization.parquet")
+        .sort(pl.col("admission_dttm"))
+        .group_by("patient_id")
+        .first()
+    )
+    for k, v in {
+        "18": 2018,
+        "19": 2019,
+        "20": 2020,
+        "21": 2021,
+        "22": 2022,
+        "23": 2023,
+        "24": 2024,
+    }.items():
+        (data_raw / f"{h}-{k}").mkdir(exist_ok=True)
+        grp = df.filter(pl.col("admission_dttm").dt.year() == v)
+        for f in (data_raw / f"{h}-2.1.0").glob("*.parquet"):
+            try:  # hospitalization level
+                pl.scan_parquet(f).cast({"hospitalization_id": str}).join(
+                    grp.select("hospitalization_id").lazy(),
+                    on="hospitalization_id",
+                    validate="m:1",
+                ).sink_parquet(data_raw / f"{h}-{k}" / f.name)
+                print(f"Processed {f.name} at hospitalizion-level.")
+            except pl.exceptions.ColumnNotFoundError:  # patient level
+                try:
+                    pl.scan_parquet(f).join(
+                        grp.select("patient_id").lazy(), on="patient_id", validate="m:1"
+                    ).sink_parquet(data_raw / f"{h}-{k}" / f.name)
+                    print(f"Processed {f.name} at patient-level.")
+                except pl.exceptions.ColumnNotFoundError:  # a lookup table
+                    shutil.copy2(f, data_raw / f"{h}-{k}" / f.name)
+                    print(f"Copied {f.name}.")

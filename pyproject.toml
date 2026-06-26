@@ -77,13 +77,13 @@
 
     [tool.flwr.federations.minimal]
         options.backend.client-resources.num-cpus = 1
-        options.backend.client-resources.num-gpus = 0.3
+        options.backend.client-resources.num-gpus = 1
         options.num-supernodes                    = 3
 
     [tool.flwr.federations.standard]
-        options.backend.client-resources.num-cpus = 2
+        options.backend.client-resources.num-cpus = 1
         options.backend.client-resources.num-gpus = 1
-        options.num-supernodes                    = 11
+        options.num-supernodes                    = 12
 
 [tool.ruff]
     extend-exclude = [ "*.md" ]
