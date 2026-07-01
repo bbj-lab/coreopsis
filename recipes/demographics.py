@@ -5,20 +5,20 @@ gather stats on training sets
 """
 
 import importlib.resources as resources
+import os
 import pathlib
 
 import polars as pl
 from omegaconf import OmegaConf
 
-# from rich import print
-
 pl.Config(set_fmt_float="mixed", float_precision=3, tbl_rows=-1, tbl_cols=-1)
 
-hm = pathlib.Path("~/coreopsis").expanduser().resolve()
+hm = (
+    pathlib.Path("/gpfs/data" if os.uname().nodename.startswith("cri") else "/mnt")
+    / "bbj-lab/users/burkh4rt"
+)
 
-dsets = [f"mimic-{y:02d}" for y in range(8, 21, 3)] + [
-    f"{h}-{y}" for h in ("ucmc", "nu") for y in range(18, 25)
-]
+dsets = ("mimic-icu", "ucmc-icu", "nu-icu", "all")
 
 pt_cols = OmegaConf.load(resources.files("coreopsis.config") / "collation.yaml")[
     "pass_through_columns"
@@ -51,7 +51,7 @@ df_outcomes = pl.concat(
 print(
     df_outcomes.transpose(
         include_header=True, header_name="outcome", column_names="dataset"
-    ).sort("all")
+    )
     # .to_pandas()
     # .to_latex(index=False, float_format="%.3f")
 )
@@ -93,3 +93,23 @@ print(
     # .to_pandas()
     # .to_latex(index=False, float_format="%.3f")
 )
+
+df_tkns = pl.concat(
+    [
+        pl.read_parquet(hm / "processed" / ds / "tokens_times.parquet").select(
+            pl.lit(ds).alias("dataset"),
+            pl.len().alias("count"),
+            pl.col("tokens").list.len().mean().alias("avg_tkns"),
+            pl.col("tokens").list.len().median().alias("med_tkns"),
+            (pl.col("times").list.last() - pl.col("times").list.first())
+            .mean()
+            .alias("avg_los"),
+            (pl.col("times").list.last() - pl.col("times").list.first())
+            .median()
+            .alias("med_los"),
+        )
+        for ds in dsets
+    ]
+)
+
+print(df_tkns)

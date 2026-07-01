@@ -56,18 +56,15 @@ cocoa combine-datasets \
 
 dsets+=('all')
 
-# # train separate models on each dataset
-# for ds in "${dsets[@]}"; do
-# 	cotorra train \
-# 		--training-config ${config_home}/training.yaml \
-# 		--processed-data-home ./processed/${ds} \
-# 		--output-home ./output/${ds} \
-# 		2>&1 | tee ./logs/training-${ds}.log
-# done
+# train separate models on each dataset
+for ds in "${dsets[@]}"; do
+	sbatch --export=ALL,ds=$ds,config_home=$config_home \
+		recipes/run_training.sh
+done
 
 # train private models on each dataset
 for ds in "${dsets[@]}"; do
-	sbatch --export=ALL,ds=$ds,config_home=$config_home \
+	sbatch --export=ALL,private=1,ds=$ds,config_home=$config_home \
 		recipes/run_training.sh
 done
 
@@ -76,34 +73,39 @@ coreopsis run . standard \
 	--stream \
 	--run-config "
 				 'fed-strategy'='FedAvg'
-				 'output-home'='./output/fedavg10-a'
+				 'output-home'='./output/fedavg10-p'
 				 'num-server-rounds'=10
 				 'datasets'='[$dsets_cfg]'
+				 'diff-priv-client'=1
 				 " \
 	--federation-config "
 						options.num-supernodes=$((${#dsets[@]} - 1))
 						options.backend.client-resources.num-cpus=1
 						options.backend.client-resources.num-gpus=1
-						" \
-	2>&1 | tee ./logs/training-fedavg10.log
+						"
 
-mdls=(fedavg10/coreopsis-round-10)
+mdls=(
+	${dsets[@]/%//mdl-cotorra}
+	${dsets[@]/%/-p/mdl-cotorra}
+	fedavg10-p/checkpoint-19770
+)
 
 # extract reps for each dataset, for each model
 for ds in "${dsets[@]}"; do
-	cotorra extract \
-		--extraction-config ${config_home}/extraction.yaml \
-		--processed-data-home ./processed/${ds} \
-		--model-home ./output/${ds}-p/mdl-cotorra \
-		--output-home "./processed/${ds}/mdl-${ds}-p"
-	cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-${ds}-p"
-	cotorra rep-based-score \
-		--scoring-config ${config_home}/scoring.yaml \
-		--processed-data-home "./processed/${ds}/mdl-${ds}-p" \
-		--model-home ./output/${ds}-p/mdl-cotorra \
-		--estimator logistic-CV \
-		--verbose \
-		2>&1 | tee "./logs/scoring-ds-${ds}-mdl-${ds}.log"
+	for mdl in "${mdls[@]}"; do
+		cotorra extract \
+			--extraction-config ${config_home}/extraction.yaml \
+			--processed-data-home ./processed/${ds} \
+			--model-home ./output/${mdl} \
+			--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
+		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
+		cotorra rep-based-score \
+			--scoring-config ${config_home}/scoring.yaml \
+			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
+			--model-home ./output/${mdl} \
+			--estimator logistic \
+			--verbose
+	done
 done
 
 python3 postprocessing.py

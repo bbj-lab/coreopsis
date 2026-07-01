@@ -19,7 +19,6 @@ def set_weights(net, parameters):
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = collections.OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
-    net.tie_weights()
 
 
 def unpack_context(context: Context):

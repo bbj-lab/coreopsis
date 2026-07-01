@@ -18,6 +18,7 @@ from flwr.common.logger import log
 from coreopsis.task import get_weights, set_weights, unpack_context
 from cotorra.loader import Loader
 from cotorra.trainer import Trainer
+from cotorra.trainer_dp import TrainerDP
 
 
 class FlowerClient(NumPyClient):
@@ -28,7 +29,12 @@ class FlowerClient(NumPyClient):
         ]
         training_cfg, processed_data_dir, output_home = unpack_context(context)
         self.loader = Loader(training_cfg, processed_data_dir / self.dset)
-        self.ct = Trainer(training_cfg, processed_data_dir / self.dset, output_home)
+        self.private_client = bool(self.context.run_config.get("diff-priv-client", 0))
+        self.ct = (TrainerDP if self.private_client else Trainer)(
+            training_cfg, processed_data_dir / self.dset, output_home
+        )
+        self.ct.trainer.model_init = None
+        self.model = getattr(self.ct.trainer.model, "_module", self.ct.trainer.model)
 
         self.created = time.time()
         self.id = hashlib.md5(
