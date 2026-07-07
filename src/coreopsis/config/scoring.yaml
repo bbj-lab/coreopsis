@@ -3,7 +3,6 @@
 max_seq_len: !!int &max_len 4096
 
 tokens_of_interest: &tois
-  - XFR-IN//icu
   - RESP//imv
   - DSCG//expired
   - LABEL//*

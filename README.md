@@ -53,65 +53,41 @@ coreopsis run . | tee "logs/$(date --iso-8601=minutes).stddout"
 
 The `[tool.flwr.app.config]` table controls top-level training behaviour:
 
-| Key                  | Default                                         | Description                                                            |
-| -------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
-| `datasets`           | `'["mimic-pre14","mimic-post14","ucmc-first"]'` | JSON array of dataset names, one per client partition                  |
-| `fed-strategy`       | `"FedAvg"`                                      | Federated averaging strategy (`FedAvg` or `FedAvgM`)                   |
-| `num-server-rounds`  | `3`                                             | Number of federated averaging rounds                                   |
-| `output-home`        | `./output/`                                     | Directory where checkpoints and the final federated model are saved    |
-| `processed-data-dir` | `./processed/`                                  | Path to processed data (tokenized timelines, splits, tokenizer config) |
-| `training-config`    | `./src/coreopsis/config/training.yaml`          | Path to the training configuration YAML [see below]                    |
+| Key                  | Default                                | Description                                                             |
+| -------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
+| `datasets`           | `'["mimic-icu","ucmc-icu","nu-icu"]'`  | JSON array of dataset names, one per client partition                   |
+| `diff-priv-client`   | `0`                                    | Enable differential privacy on the client (`1` for true, `0` for false) |
+| `diff-priv-server`   | `0`                                    | Enable differential privacy on the server (`1` for true, `0` for false) |
+| `fed-strategy`       | `"FedAvg"`                             | Federated averaging strategy (`FedAvg`, `FedAvgM`, or `FedAdam`)        |
+| `max-grad-norm`      | `1.0`                                  | Maximum gradient norm for clipping (used with differential privacy)     |
+| `noise-multiplier`   | `1.5`                                  | Noise multiplier for differential privacy                               |
+| `num-server-rounds`  | `10`                                   | Number of federated averaging rounds                                    |
+| `output-home`        | `./output/`                            | Directory where checkpoints and the final federated model are saved     |
+| `processed-data-dir` | `./processed/`                         | Path to processed data (tokenized timelines, splits, tokenizer config)  |
+| `training-config`    | `./src/coreopsis/config/training.yaml` | Path to the training configuration YAML [see below]                     |
 
 Federations are defined under `[tool.flwr.federations]`. Three are provided out
 of the box:
 
-| Federation            | `num-supernodes` | CPUs per node | GPUs per node |
-| --------------------- | ---------------- | ------------- | ------------- |
-| `local`               | 3                | 0.3           | 0             |
-| `minimal` _(default)_ | 3                | 1             | 0.3           |
-| `standard`            | 4                | 2             | 1.0           |
+| Federation             | `num-supernodes` | CPUs per node | GPUs per node |
+| ---------------------- | ---------------- | ------------- | ------------- |
+| `local`                | 3                | 0.3           | 0             |
+| `minimal`              | 3                | 1             | 1             |
+| `standard` _(default)_ | 3                | 1             | 1             |
 
 Run a specific federation with `coreopsis run . <federation-name>`. Add new
 federations by adding a `[tool.flwr.federations.<name>]` block with the same
 `options.*` keys.
 
-### Training configuration ([example](src/coreopsis/config/training.yaml))
+### Collation / tokenization / winnowing
 
-_These mirror the ones
-[found in cotorra](https://github.com/bbj-lab/cotorra#configuration)._
+These configurations are borrowed directly from ☕️
+[cocoa](https://github.com/bbj-lab/cocoa).
 
-- **model_name**: Name or path of the model (e.g., `meta-llama/Llama-3.2-1B`).
-- **model_args**: Model architecture parameters passed directly to HuggingFace's
-  [`AutoConfig`](https://huggingface.co/docs/transformers/en/model_doc/auto)
-  object.
-- **max_seq_len**: Maximum sequence length for model input.
-- **n_epochs**: Number of epochs (handled in the dataloader, not the trainer).
-- **run_name**: Name for the current run (referenced by `wandb` and
-  `training_args`).
-- **tokens_of_interest**: List of special tokens to upweight during training
-  (referenced by loss config).
-- **wandb**:
-  - **project**: Weights & Biases project name for experiment tracking.
-  - **run_name**: Name for the current run.
-- **custom_loss**: Boolean flag to enable custom loss functions (default:
-  `false`).
-- **quantile_token_loss** _(optional)_: Upweights loss on quantile boundary
-  tokens.
-  - **qt_weight**: Weight multiplier for quantile tokens.
-- **label_weighted_loss** _(optional)_: Upweights loss on specific tokens of
-  clinical interest.
-  - **tokens_of_interest**: List of token labels to upweight.
-  - **toi_weight**: Weight multiplier applied to those tokens.
-- **time_based_rope** _(optional)_: Enables time-aware rotary position
-  embeddings.
-  - **sec_per_pos_id**: Number of seconds represented by one position id
-    increment.
-- **training_args**: Arguments passed to HuggingFace's
-  [`TrainingArguments`](https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments).
-- **tuning_args** _(optional)_: Hyperparameter search configuration.
-  - **direction**: Optimization direction (`minimize` or `maximize`).
-  - **backend**: Tuning backend (e.g., `optuna`).
-  - **n_trials**: Number of hyperparameter search trials.
+### Training / extraction / scoring
+
+These configurations are borrowed directly from 🦜
+[cotorra](https://github.com/bbj-lab/cotorra).
 
 ## Modeling ecosystem
 
@@ -224,7 +200,7 @@ for d in data-raw output processed; do
 done
 ```
 ```
-rsync -avht \
+rsync -avh \
  --exclude "output" \
  --exclude "processed" \
  --exclude "data-raw" \
@@ -243,7 +219,7 @@ for d in data-raw output processed; do
 done
 ```
 ```
-rsync -avht \
+rsync -avh \
  --exclude "output" \
  --exclude "processed" \
  --exclude "data-raw" \
@@ -255,11 +231,11 @@ rsync -avht \
  randi:/gpfs/data/bbj-lab/users/burkh4rt
 ```
 
-rsync -avht \
+rsync -avh \
  bbj-lab1:~/coreopsis/processed \
  ~/Downloads/
 
-rsync -avht \
+rsync -avh \
  ~/Downloads/processed \
  randi:/gpfs/data/bbj-lab/users/burkh4rt/
 

@@ -1,7 +1,6 @@
 %YAML 1.2
 ---
 outcome_tokens: # supports patterns with fnmatch
-  - XFR-IN//icu
   - RESP//imv
   - DSCG//expired
   - LABEL//*

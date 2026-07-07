@@ -26,6 +26,7 @@ nsets=${#dsets[@]}
 dsets_cfg=$(printf '"%s",' "${dsets[@]}")
 dsets_cfg=${dsets_cfg%,}
 config_home=./src/coreopsis/config
+export dsets nsets dsets_cfg config_home
 
 # collate data
 parallel --bar cocoa collate \
@@ -72,36 +73,37 @@ for ds in "${dsets[@]}"; do
 done
 
 # run federated learning
-sbatch --export=ALL,dsets_cfg="$dsets_cfg",nsets=$nsets \
+sbatch --export=ALL \
 	--gres=gpu:$nsets \
 	recipes/run_federated.sh
 
 # run federated learning with client-side privacy
-sbatch --export=ALL,private=1,dsets_cfg="$dsets_cfg",nsets=$nsets \
+sbatch --export=ALL,private=1 \
 	--gres=gpu:$nsets \
 	recipes/run_federated.sh
 
-# mdls=(
-# 	${dsets[@]/%//mdl-cotorra}
-# 	${dsets[@]/%/-p/mdl-cotorra}
-# 	fedavg10-p/checkpoint-19770
-# )
+mdls=(
+	${dsets[@]/%//mdl-cotorra}
+	${dsets[@]/%/-p/mdl-cotorra}
+	fedavg10/coreopsis-round-10
+	fedavg10-p/coreopsis-round-10
+)
 
-# # extract reps for each dataset, for each model
-# for ds in "${dsets[@]}"; do
-# 	for mdl in "${mdls[@]}"; do
-# 		cotorra extract \
-# 			--extraction-config ${config_home}/extraction.yaml \
-# 			--processed-data-home ./processed/${ds} \
-# 			--model-home ./output/${mdl} \
-# 			--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
-# 		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
-# 		cotorra rep-based-score \
-# 			--scoring-config ${config_home}/scoring.yaml \
-# 			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
-# 			--model-home ./output/${mdl} \
-# 			--estimator logistic-CV
-# 	done
-# done
+# extract reps for each dataset, for each model
+for ds in "${dsets[@]}"; do
+	for mdl in "${mdls[@]}"; do
+		cotorra extract \
+			--extraction-config ${config_home}/extraction.yaml \
+			--processed-data-home ./processed/${ds} \
+			--model-home ./output/${mdl} \
+			--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
+		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
+		cotorra rep-based-score \
+			--scoring-config ${config_home}/scoring.yaml \
+			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
+			--model-home ./output/${mdl} \
+			--estimator logistic-CV
+	done
+done
 
 # python3 postprocessing.py 2>&1 | tee ./logs/scoring.log

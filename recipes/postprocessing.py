@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 from omegaconf import OmegaConf
+from sklearn import metrics as skl_mets
 
 from cotorra.util import bootstrap_ci
 
@@ -23,9 +24,11 @@ hm = (
 
 dsets = ("mimic-icu", "ucmc-icu", "nu-icu", "all")
 
-
 mdls = (
-    [f"mdl-{ds}" for ds in dsets] + [f"mdl-{ds}-p" for ds in dsets] + ["mdl-fedavg10-p"]
+    [f"mdl-{ds}" for ds in dsets]
+    + ["mdl-fedavg10"]
+    + [f"mdl-{ds}-p" for ds in dsets]
+    + ["mdl-fedavg10-p"]
 )
 grokked_outcome_tokens = [
     x
@@ -42,18 +45,17 @@ grokked_outcome_tokens = [
 
 
 def get_mdl_ds_res(ds, mdl, tt):
-    df = pl.read_parquet(hm / "processed" / ds / mdl / "scores-*.parquet")
+    df = pl.read_parquet(hm / "processed" / ds / mdl / "scores-rep-based-*.parquet")
     y_qual, y_true, y_score = (
         df.select(~pl.col(f"{tt}_past"), f"{tt}_future", f"{tt}_rep_score").to_numpy().T
     )
-    return (
-        bootstrap_ci(
-            y_true[y_qual.astype(bool)],
-            np.nan_to_num(y_score)[y_qual.astype(bool)],
-            n_samples=1_00,
-        )["roc_auc"]
-        .mean()
-        .round(3)
+    # bootstrap_ci(
+    #     y_true[y_qual.astype(bool)],
+    #     np.nan_to_num(y_score)[y_qual.astype(bool)],
+    #     n_samples=10,
+    # )["roc_auc"].round(3)
+    return skl_mets.roc_auc_score(
+        y_true[y_qual.astype(bool)], np.nan_to_num(y_score)[y_qual.astype(bool)]
     )
 
 
