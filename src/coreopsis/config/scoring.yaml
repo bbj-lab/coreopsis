@@ -3,30 +3,26 @@
 max_seq_len: !!int &max_len 4096
 
 tokens_of_interest: &tois
-  - XFR-IN//icu
   - RESP//imv
   - DSCG//expired
-  - DSCG//hospice
-  - LAB-RES//sodium_Q0
-  - LAB-RES//sodium_Q9
-  - LAB-RES//potassium_Q0
-  - LAB-RES//potassium_Q9
-  - LAB-RES//hemoglobin_Q0
-  - LAB-RES//glucose_serum_Q0
-  - VTL//heart_rate_Q9
-  - SOFA//resp-4
-  - SOFA//renal-4
-  - SOFA//liver-4
-  - SOFA//cv-4
-  - ASMT//cam_total_yes
+  - LABEL//anemia_init
+  - LABEL//crrt_init
+  - LABEL//hyperk_init
+  - LABEL//hypok_init
+  - LABEL//hyperna_init
+  - LABEL//hypona_init
+  - LABEL//hypertension_init
+  - LABEL//hypotension_init
+  - LABEL//pressor_init
+  - LABEL//tachy_init
 
 score:
   max_len: *max_len
-  n_samp: !!int 10 # for generative scoring, MC samples per input per trajectory type
+  n_samp: !!int 10 # MC samples per input per trajectory type
   target_tokens: *tois # token-based outcomes of interest
   end_tokens: # tokens that naturally terminate a sequence
     - EOS
   suppressed_tokens: [] # tokens to suppress (e.g. PAD) via logit bias
   trunc_id: !!int 0 # token id to force after time horizon exceeded
-  max_time: !!int 1440 # 1 day-- for generative scoring, max time horizon in minutes
+  max_time: !!int 1440 # 1 day, max time horizon in minutes
   batch_size: !!int 64

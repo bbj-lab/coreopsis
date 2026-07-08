@@ -4,39 +4,33 @@ model_name: meta-llama/Llama-3.2-1B
 model_args_presets:
   llama_32: &llama_32
     hidden_size: !!int 1024
-    itermediate_size: !!int 2048
+    intermediate_size: !!int 2048
     num_hidden_layers: !!int 8
     num_attention_heads: !!int 8
+  llama_32_med: &llama_32_med
+    hidden_size: 256
+    intermediate_size: 1024
+    num_hidden_layers: 6
+    num_attention_heads: 8
+    num_key_value_heads: 4
   llama_32_lite: &llama_32_lite
     hidden_size: !!int 128
-    itermediate_size: !!int 512
+    intermediate_size: !!int 512
     num_hidden_layers: !!int 4
     num_attention_heads: !!int 4
     num_key_value_heads: !!int 2
     max_position_embeddings: !!int 32768
-model_args: *llama_32
+model_args: *llama_32_lite
 
 max_seq_len: !!int &max_len 4096
 n_epochs: !!int 1
-run_name: &run_name coreopsis
+run_name: &run_name cotorra
 
 tokens_of_interest: &tois
   - XFR-IN//icu
   - RESP//imv
   - DSCG//expired
-  - DSCG//hospice
-  - LAB-RES//sodium_Q0
-  - LAB-RES//sodium_Q9
-  - LAB-RES//potassium_Q0
-  - LAB-RES//potassium_Q9
-  - LAB-RES//hemoglobin_Q0
-  - LAB-RES//glucose_serum_Q0
-  - VTL//heart_rate_Q9
-  - SOFA//resp-4
-  - SOFA//renal-4
-  - SOFA//liver-4
-  - SOFA//cv-4
-  - ASMT//cam_total_yes
+  - LABEL//*
 
 wandb:
   project: coreopsis
@@ -53,30 +47,31 @@ time_based_rope:
   sec_per_pos_id: !!int 300
 
 training_args:
-  lr_scheduler_type: constant
   report_to: wandb
   run_name: *run_name
   per_device_train_batch_size: !!int 4
   per_device_eval_batch_size: !!int 4
-  save_total_limit: !!int 1
+  save_total_limit: !!int 2
   metric_for_best_model: eval_loss
   load_best_model_at_end: !!bool true
   greater_is_better: !!bool false
-  eval_strategy: steps # keep eval/save in sync for load_best_model_at_end
-  eval_steps: !!float 0.1 # evaluate every 1/10th of total training steps (1 epoch run)
+  eval_strategy: epoch # keep eval/save in sync for load_best_model_at_end
   prediction_loss_only: !!bool true # may improve training speed
-  save_strategy: steps
-  save_steps: !!float 0.1 # save checkpoint every 1/10th of total training steps (1 epoch run)
+  save_strategy: epoch
   ddp_find_unused_parameters: !!bool false
-  # neftune_noise_alpha: !!float 5.0 # incompatible with tuning & old versions of transformers
+  # neftune_noise_alpha: !!float 5.0
   auto_find_batch_size: !!bool false # turning this on may cause issues with hyperparameter tuning
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
   remove_unused_columns: !!bool false # otherwise `s_elapsed` is automatically dropped
-  bf16: !!bool true
+  # bf16: !!bool true
   # max_steps: !!int 10 # uncomment for testing purposes only
 
 tuning_args:
   direction: minimize
   backend: optuna
   n_trials: !!int 10
+
+privacy_parameters:
+  noise_multiplier: !!float 1.5
+  max_grad_norm: !!float 1.0

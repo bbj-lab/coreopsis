@@ -21,6 +21,16 @@ reference:
       validation: "m:1"
       with_col_expr: pl.lit("age").alias("AGE")
 
+# copy these from reference table to subject_splits.parquet
+# and then *_for_inference.parquet
+pass_through_columns:
+  - age_at_admission
+  - admission_type_category
+  - race_category
+  - ethnicity_category
+  - sex_category
+  - language_category
+
 entries:
   - table: REFERENCE
     prefix: RACE
@@ -185,36 +195,42 @@ entries:
 
   - table: clif_sofa
     prefix: SOFA
+    filter_expr: pl.col("sofa_cv_97") > 0
     with_col_expr: (pl.lit("cv-") + pl.col("sofa_cv_97").cast(str)).alias("cv")
     code: cv
     time: event_time
 
   - table: clif_sofa
     prefix: SOFA
+    filter_expr: pl.col("sofa_cns") > 0
     with_col_expr: (pl.lit("cns-") + pl.col("sofa_cns").cast(str)).alias("cns")
     code: cns
     time: event_time
 
   - table: clif_sofa
     prefix: SOFA
+    filter_expr: pl.col("sofa_coag") > 0
     with_col_expr: (pl.lit("coag-") + pl.col("sofa_coag").cast(str)).alias("coag")
     code: coag
     time: event_time
 
   - table: clif_sofa
     prefix: SOFA
+    filter_expr: pl.col("sofa_liver") > 0
     with_col_expr: (pl.lit("liver-") + pl.col("sofa_liver").cast(str)).alias("liver")
     code: liver
     time: event_time
 
   - table: clif_sofa
     prefix: SOFA
+    filter_expr: pl.col("sofa_renal") > 0
     with_col_expr: (pl.lit("renal-") + pl.col("sofa_renal").cast(str)).alias("renal")
     code: renal
     time: event_time
 
   - table: clif_sofa
     prefix: SOFA
+    filter_expr: pl.col("sofa_resp") > 0
     with_col_expr: (pl.lit("resp-") + pl.col("sofa_resp").cast(str)).alias("resp")
     code: resp
     time: event_time
@@ -229,3 +245,144 @@ entries:
     prefix: DSCG
     code: discharge_category
     time: discharge_dttm
+
+  # vasopressor initiation
+  - table: clif_medication_admin_continuous_converted
+    prefix: LABEL
+    filter_expr: >-
+      pl.col("med_category").is_in(["angiotensin", "dopamine", "epinephrine", "norepinephrine",
+      "phenylephrine" , "vasopressin"])
+    with_col_expr: pl.lit("pressor_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("admin_dttm").first()
+      - pl.col("admin_dttm").min()
+    code: code
+    time: admin_dttm
+
+  # CRRT initiation
+  - table: clif_crrt_therapy
+    prefix: LABEL
+    filter_expr: pl.col("crrt_mode_category").is_not_null()
+    with_col_expr: pl.lit("crrt_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("recorded_dttm").first()
+      - pl.col("recorded_dttm").min()
+    code: code
+    time: recorded_dttm
+
+  # 1st hyperkalemia; potassium >= 6.5 mEq/L
+  # NB: for potassium, mEq/L = mmol/L
+  - table: clif_labs
+    prefix: LABEL
+    filter_expr:
+      - pl.col("lab_category") == "potassium"
+      - pl.col("lab_value_numeric") >= 6.5
+    with_col_expr: pl.lit("hyperK_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("lab_result_dttm").first()
+      - pl.col("lab_result_dttm").min()
+    code: code
+    time: lab_result_dttm
+
+  # 1st hypokalemia; potassium < 2.5 mEq/L
+  - table: clif_labs
+    prefix: LABEL
+    filter_expr:
+      - pl.col("lab_category") == "potassium"
+      - pl.col("lab_value_numeric") < 2.5
+    with_col_expr: pl.lit("hypoK_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("lab_result_dttm").first()
+      - pl.col("lab_result_dttm").min()
+    code: code
+    time: lab_result_dttm
+
+  # 1st anemia; hemoglobin < 7.0 g/dL
+  - table: clif_labs
+    prefix: LABEL
+    filter_expr:
+      - pl.col("lab_category") == "hemoglobin"
+      - pl.col("lab_value_numeric") < 7.0
+    with_col_expr: pl.lit("anemia_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("lab_result_dttm").first()
+      - pl.col("lab_result_dttm").min()
+    code: code
+    time: lab_result_dttm
+
+  # 1st hyponatremia; sodium < 120 mEq/L
+  # for sodium, mEq/L = mmol/L
+  - table: clif_labs
+    prefix: LABEL
+    filter_expr:
+      - pl.col("lab_category") == "sodium"
+      - pl.col("lab_value_numeric") < 120.
+    with_col_expr: pl.lit("hypoNA_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("lab_result_dttm").first()
+      - pl.col("lab_result_dttm").min()
+    code: code
+    time: lab_result_dttm
+
+  # 1st hypernatremia; sodium >= 160 mEq/L
+  - table: clif_labs
+    prefix: LABEL
+    filter_expr:
+      - pl.col("lab_category") == "sodium"
+      - pl.col("lab_value_numeric") >= 160.
+    with_col_expr: pl.lit("hyperNA_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("lab_result_dttm").first()
+      - pl.col("lab_result_dttm").min()
+    code: code
+    time: lab_result_dttm
+
+  # 1st tachycardia; heart_rate >= 130 bpm
+  - table: clif_vitals
+    prefix: LABEL
+    filter_expr:
+      - pl.col("vital_category") == "heart_rate"
+      - pl.col("vital_value") >= 130
+    with_col_expr: pl.lit("tachy_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("recorded_dttm").first()
+      - pl.col("recorded_dttm").min()
+    code: code
+    time: recorded_dttm
+
+  # 1st hypertension; sbp >= 180mmHg or dbp >= 120mmHg
+  - table: clif_vitals
+    prefix: LABEL
+    filter_expr: >-
+      ((pl.col("vital_category") == "sbp") & (pl.col("vital_value") >= 180)) |
+      ((pl.col("vital_category") == "dbp") & (pl.col("vital_value") >= 120))
+    with_col_expr: pl.lit("hypertension_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("recorded_dttm").first()
+      - pl.col("recorded_dttm").min()
+    code: code
+    time: recorded_dttm
+
+  # 1st hypotension; map <65mmHg or sbp < 90mmHg
+  - table: clif_vitals
+    prefix: LABEL
+    filter_expr: >-
+      ((pl.col("vital_category") == "map") & (pl.col("vital_value") < 65)) |
+      ((pl.col("vital_category") == "sbp") & (pl.col("vital_value") < 90))
+    with_col_expr: pl.lit("hypotension_init").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("recorded_dttm").first()
+      - pl.col("recorded_dttm").min()
+    code: code
+    time: recorded_dttm
+
+  # 1st sepsis event
+  - table: clif_sofa
+    prefix: LABEL
+    filter_expr: pl.col("sofa_total") >= 2
+    with_col_expr: pl.lit("sepsis_onset").alias("code")
+    agg_expr:
+      - pl.col("code").sort_by("event_time").first()
+      - pl.col("event_time").min()
+    code: code
+    time: event_time

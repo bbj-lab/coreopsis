@@ -12,12 +12,15 @@
     dependencies = [
         "accelerate==0.34.2",
         "click<8.2",
+        "clifpy @ git+https://github.com/burkh4rt/clifpy.git@utc-fix",
         "cocoa @ git+https://github.com/burkh4rt/cocoa.git",
-        "cotorra @ git+https://github.com/burkh4rt/cotorra.git@dev-rep-based-estimators",
+        "cotorra @ git+https://github.com/burkh4rt/cotorra.git",
         "flwr[simulation]==1.18.0",
         "huggingface_hub>=0.23.2,<1.0",
         "protobuf==4.25.3",
         "ray==2.31.0",
+        "rich",
+        "scikit-learn",
         "torch",
         "transformers==4.45.2",
         "typer==0.12.5",
@@ -33,7 +36,7 @@
     name = "coreopsis"
     readme = { file = "README.md", content-type = "text/markdown" }
     requires-python = ">=3.11"
-    version = "26.5.0"
+    version = "26.5.1"
 
     [project.scripts]
         coreopsis = "coreopsis.cli:main"
@@ -56,15 +59,19 @@
         serverapp = "coreopsis.server_app:app"
 
     [tool.flwr.app.config]
-        datasets           = '["mimic-pre14","mimic-post14","ucmc-first"]'
-        fed-strategy       = "FedAvgM"                                     # options: FedAvg, FedAvgM, FedAdam
-        num-server-rounds  = 3
+        datasets           = '["mimic-icu","ucmc-icu","nu-icu"]'
+        diff-priv-client   = 0                                      # 1 for true, 0 for false
+        diff-priv-server   = 0
+        fed-strategy       = "FedAvg"                               # options: FedAvg, FedAvgM, FedAdam
+        max-grad-norm      = 1.0
+        noise-multiplier   = 1.5
+        num-server-rounds  = 10
         output-home        = "./output/"
         processed-data-dir = "./processed/"
         training-config    = "./src/coreopsis/config/training.yaml"
 
 [tool.flwr.federations]
-    default = "minimal"
+    default = "standard"
 
     [tool.flwr.federations.local]
         options.backend.client-resources.num-cpus = 0.3
@@ -73,11 +80,11 @@
 
     [tool.flwr.federations.minimal]
         options.backend.client-resources.num-cpus = 1
-        options.backend.client-resources.num-gpus = 0.3
+        options.backend.client-resources.num-gpus = 1
         options.num-supernodes                    = 3
 
     [tool.flwr.federations.standard]
-        options.backend.client-resources.num-cpus = 2
+        options.backend.client-resources.num-cpus = 1
         options.backend.client-resources.num-gpus = 1
         options.num-supernodes                    = 3
 
