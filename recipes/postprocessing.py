@@ -17,8 +17,6 @@ from sklearn import linear_model as skl_lm
 from sklearn import metrics as skl_mets
 from sklearn import model_selection as skl_mdl_sel
 
-# from cotorra.util import bootstrap_ci
-
 pd.options.display.float_format = "{:,.3f}".format
 pd.options.display.max_columns = None
 pd.options.display.max_rows = 100
@@ -118,7 +116,7 @@ def get_results(ds, mdl, metric: str = "roc_auc_score"):
     return res
 
 
-res = {(ds, mdl): get_results(ds, mdl, "pr_auc_score") for ds in dsets for mdl in mdls}
+res = {(ds, mdl): get_results(ds, mdl) for ds in dsets for mdl in mdls}
 
 results = pd.DataFrame(
     columns=dsets,
@@ -128,19 +126,7 @@ results = pd.DataFrame(
 )
 for tt in grokked_outcome_tokens:
     for ds in dsets:
-        # others = set(dsets) - {ds}
-        # r = "mc" if ds == "nu-icu" else "mn" if ds == "ucmc-icu" else "cn"
-        # stacked = get_stacked_results(
-        #     ds, mdls_to_stack=[f"mdl-{ds}-10" for ds in others] + [f"mdl-fedavg10-{r}"]
-        # )
         for mdl in mdls:
             results.loc[(tt, mdl), ds] = res[ds, mdl][tt]
-        # results.loc[(tt, "stacked-rem"), ds] = stacked[tt]
-print(results)
 
-# average over tokens for each model
-agg = results.groupby(level="models").mean()
-print(agg)
-
-
-get_results(ds, mdl, metric="brier_score_loss")
+results.to_csv(hm / "fed-results.csv")

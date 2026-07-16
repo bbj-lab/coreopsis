@@ -44,10 +44,10 @@ training_args:
   load_best_model_at_end: !!bool true
   greater_is_better: !!bool false
   eval_strategy: steps # keep eval/save in sync for load_best_model_at_end
-  eval_steps: !!float 0.1 # evaluate every 1/10th of total training steps (1 epoch run)
+  eval_steps: !!float 0.01 # evaluate every 1/100th of total training steps (1 epoch run)
   prediction_loss_only: !!bool true # may improve training speed
   save_strategy: steps
-  save_steps: !!float 0.1 # save checkpoint every 1/10th of total training steps (1 epoch run)
+  save_steps: !!float 0.01 # save checkpoint every 1/100th of total training steps (1 epoch run)
   ddp_find_unused_parameters: !!bool false
   # neftune_noise_alpha: !!float 5.0
   auto_find_batch_size: !!bool false # turning this on may cause issues with hyperparameter tuning

@@ -13,4 +13,4 @@ source .venv/bin/activate
 cotorra train \
 	--training-config ${config_home}/training.yaml \
 	--processed-data-home ./processed/${ds} \
-	--output-home ./output/${ds}-10
+	--output-home ./output/${ds}-100

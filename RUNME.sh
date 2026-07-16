@@ -65,6 +65,7 @@ cocoa combine-datasets \
 dsets+=('all')
 
 # train separate models on each dataset
+dsets=(ucmc-icu nu-icu)
 for ds in "${dsets[@]}"; do
 	sbatch --export=ALL,ds=$ds,config_home=$config_home \
 		recipes/run_training.sh
