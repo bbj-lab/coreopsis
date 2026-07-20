@@ -62,11 +62,7 @@
 
     [tool.flwr.app.config]
         datasets           = '["mimic-icu","ucmc-icu","nu-icu"]'
-        diff-priv-client   = 0                                      # 1 for true, 0 for false
-        diff-priv-server   = 0
         fed-strategy       = "FedAvg"                               # options: FedAvg, FedAvgM, FedAdam
-        max-grad-norm      = 1.0
-        noise-multiplier   = 1.5
         num-server-rounds  = 10
         output-home        = "./output/"
         processed-data-dir = "./processed/"

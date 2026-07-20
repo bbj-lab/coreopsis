@@ -28,8 +28,8 @@ COL_ALL = "#59315F"  # violet -- single model pooled over all data
 # dataset -> (display name, fedavg model trained on the *other two* sites,
 #             full training-set size)
 plot_dsets = {
-    "ucmc-icu": ("UCMC", "mdl-fedavg10-mn", 15400),  # other two = mimic + nu
-    "nu-icu": ("NU", "mdl-fedavg10-mc", 46029),  # other two = mimic + ucmc
+    "ucmc-icu": ("UCMC", "mdl-fedavg10-mn", 15399),  # other two = mimic + nu
+    "nu-icu": ("NU", "mdl-fedavg10-mc", 46030),  # other two = mimic + ucmc
     "mimic-icu": ("MIMIC", "mdl-fedavg10-cn", 24146),  # other two = ucmc + nu
 }
 

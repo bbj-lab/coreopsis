@@ -147,6 +147,13 @@ for ds in dsets:
         for tt in grokked_outcome_tokens:
             xfer.loc[(tt, mdl), ds] = res[tt]
 
-agg_xfer = xfer.groupby("models").mean().sort("models")
-
+agg_xfer = xfer.groupby("models").mean().sort_values("models")
 xfer.to_csv(hm / "xfer-results.csv")
+
+for ds in dsets:
+    for mdl in mdls:
+        res = get_results(ds, mdl, "pr_auc_score")
+        for tt in grokked_outcome_tokens:
+            xfer.loc[(tt, mdl), ds] = res[tt]
+
+agg_xfer = xfer.groupby("models").mean().sort_values("models")

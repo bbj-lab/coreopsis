@@ -133,3 +133,43 @@ token_types = (
     .value_counts()
     .sort("vocab")
 )
+
+df_training = {
+    ds: pl.read_parquet(hm / "processed" / ds / "train_tokens_times.parquet")
+    for ds in dsets
+}
+
+print(
+    {
+        k: v.select(pl.col("tokens").list.len().sum()).item()
+        for k, v in df_training.items()
+    }
+)
+
+print({k: v.shape[0] for k, v in df_training.items()})
+
+print(
+    {
+        k: v.select(
+            (pl.col("times").list.max() - pl.col("times").list.min())
+            .dt.total_days()
+            .alias("duration")
+            .mean()
+        ).item()
+        for k, v in df_training.items()
+    }
+)
+
+df_test = {
+    ds: pl.read_parquet(hm / "processed" / ds / "held_out_for_inference.parquet")
+    for ds in dsets
+}
+
+print(
+    {
+        k: v.select(pl.col("tokens_past").list.len().mean()).item()
+        for k, v in df_test.items()
+    }
+)
+
+print({k: v.shape[0] for k, v in df_test.items()})

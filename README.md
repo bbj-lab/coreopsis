@@ -53,18 +53,14 @@ coreopsis run . | tee "logs/$(date --iso-8601=minutes).stddout"
 
 The `[tool.flwr.app.config]` table controls top-level training behaviour:
 
-| Key                  | Default                                | Description                                                             |
-| -------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| `datasets`           | `'["mimic-icu","ucmc-icu","nu-icu"]'`  | JSON array of dataset names, one per client partition                   |
-| `diff-priv-client`   | `0`                                    | Enable differential privacy on the client (`1` for true, `0` for false) |
-| `diff-priv-server`   | `0`                                    | Enable differential privacy on the server (`1` for true, `0` for false) |
-| `fed-strategy`       | `"FedAvg"`                             | Federated averaging strategy (`FedAvg`, `FedAvgM`, or `FedAdam`)        |
-| `max-grad-norm`      | `1.0`                                  | Maximum gradient norm for clipping (used with differential privacy)     |
-| `noise-multiplier`   | `1.5`                                  | Noise multiplier for differential privacy                               |
-| `num-server-rounds`  | `10`                                   | Number of federated averaging rounds                                    |
-| `output-home`        | `./output/`                            | Directory where checkpoints and the final federated model are saved     |
-| `processed-data-dir` | `./processed/`                         | Path to processed data (tokenized timelines, splits, tokenizer config)  |
-| `training-config`    | `./src/coreopsis/config/training.yaml` | Path to the training configuration YAML [see below]                     |
+| Key                  | Default                                | Description                                                            |
+| -------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| `datasets`           | `'["mimic-icu","ucmc-icu","nu-icu"]'`  | JSON array of dataset names, one per client partition                  |
+| `fed-strategy`       | `"FedAvg"`                             | Federated averaging strategy (`FedAvg`, `FedAvgM`, or `FedAdam`)       |
+| `num-server-rounds`  | `10`                                   | Number of federated averaging rounds                                   |
+| `output-home`        | `./output/`                            | Directory where checkpoints and the final federated model are saved    |
+| `processed-data-dir` | `./processed/`                         | Path to processed data (tokenized timelines, splits, tokenizer config) |
+| `training-config`    | `./src/coreopsis/config/training.yaml` | Path to the training configuration YAML [see below]                    |
 
 Federations are defined under `[tool.flwr.federations]`. Three are provided out
 of the box:
@@ -82,7 +78,7 @@ federations by adding a `[tool.flwr.federations.<name>]` block with the same
 ### Collation / tokenization / winnowing
 
 These configurations are borrowed directly from ☕️
-[cocoa](https://github.com/bbj-lab/cocoa).
+[cocoa-tokenizer](https://github.com/bbj-lab/cocoa).
 
 ### Training / extraction / scoring
 
@@ -94,9 +90,9 @@ These configurations are borrowed directly from 🦜
 This is the federated component of a series of libraries dedicated to
 configurable collation and training:
 
-- ☕️ [cocoa](https://github.com/bbj-lab/cocoa): configurable collation and
-  tokenization
-- 🦜 [cotorra](https://github.com/bbj-lab/cotorra): configurable training and
+- ☕️ [cocoa-tokenizer](https://pypi.org/project/cocoa-tokenizer/): configurable
+  collation and tokenization
+- 🦜 [cotorra](https://pypi.org/project/cotorra/): configurable training and
   inference (non-federated)
 - 🌼 coreopsis: _this library_
 
