@@ -74,8 +74,8 @@ round_dsets = {
 
 # metric -> (results csv, axis/title label, output filename slug)
 metrics = [
-    ("fed-results.csv", "ROC-AUC", "roc-auc"),
-    ("fed-results-pr-auc.csv", "PR-AUC", "pr-auc"),
+    ("tokenwise-roc-auc.csv", "ROC-AUC", "roc-auc"),
+    ("tokenwise-pr-auc.csv", "PR-AUC", "pr-auc"),
 ]
 
 for csv_name, metric_label, metric_slug in metrics:
