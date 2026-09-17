@@ -15,9 +15,9 @@
     dependencies = [
         "accelerate==0.34.2",
         "click<8.2",
-        "clifpy @ git+https://github.com/burkh4rt/clifpy.git@utc-fix",
-        "cocoa-tokenizer==26.6.2",
-        "cotorra==26.6.3",
+        "clifpy==2.1.0",
+        "cocoa-tokenizer==26.9.1",
+        "cotorra==26.9.0",
         "flwr[simulation]==1.18.0",
         "huggingface_hub>=0.23.2,<1.0",
         "kaleido",
@@ -64,7 +64,31 @@
         serverapp = "coreopsis.server_app:app"
 
     [tool.flwr.app.config]
-        datasets           = '["mimic-icu","ucmc-icu","nu-icu"]'
+        # the single source of truth for the dataset list: one client partition
+        # per entry, and `options.num-supernodes` below must match its length.
+        # order matters -- RUNME.sh learns the tokenizer from the first entry,
+        # `server_app` initializes the model from the last. read it back outside
+        # of flower with `coreopsis.datasets.get_datasets()` /
+        # `python -m coreopsis.datasets`; override per-run with
+        # `--run-config "'datasets'='[...]'"`
+        datasets           = '''
+        [
+            "mimic-icu-3.0.0", "ucmc-icu-3.0.0", "nu_cdh-icu-3.0.0", "nu_dh-icu-3.0.0",
+            "nu_hh-icu-3.0.0", "nu_kh-icu-3.0.0", "nu_lfh-icu-3.0.0",
+            "nu_mh-icu-3.0.0", "nu_nmh-icu-3.0.0", "nu_ph-icu-3.0.0", "rush-icu-3.0.0",
+            "eicu-73-icu-3.0.0", "eicu-122-icu-3.0.0", "eicu-148-icu-3.0.0",
+            "eicu-165-icu-3.0.0", "eicu-167-icu-3.0.0", "eicu-176-icu-3.0.0",
+            "eicu-183-icu-3.0.0", "eicu-188-icu-3.0.0", "eicu-199-icu-3.0.0",
+            "eicu-208-icu-3.0.0", "eicu-243-icu-3.0.0", "eicu-248-icu-3.0.0",
+            "eicu-252-icu-3.0.0", "eicu-264-icu-3.0.0", "eicu-281-icu-3.0.0",
+            "eicu-283-icu-3.0.0", "eicu-300-icu-3.0.0", "eicu-307-icu-3.0.0",
+            "eicu-331-icu-3.0.0", "eicu-338-icu-3.0.0", "eicu-345-icu-3.0.0",
+            "eicu-365-icu-3.0.0", "eicu-394-icu-3.0.0", "eicu-411-icu-3.0.0",
+            "eicu-413-icu-3.0.0", "eicu-416-icu-3.0.0", "eicu-417-icu-3.0.0",
+            "eicu-420-icu-3.0.0", "eicu-443-icu-3.0.0", "eicu-449-icu-3.0.0",
+            "eicu-458-icu-3.0.0"
+        ]
+        '''
         fed-strategy       = "FedAvg"                               # options: FedAvg, FedAvgM, FedAdam
         num-server-rounds  = 10
         output-home        = "./output/"

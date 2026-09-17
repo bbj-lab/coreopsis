@@ -61,7 +61,10 @@ string; all subcommands are Flower's.
 ## Configuration lives in two places
 
 1. **`pyproject.toml`** `[tool.flwr.app.config]` — top-level federated run
-   parameters: `datasets` (JSON array, one client partition per entry),
+   parameters: `datasets` (JSON array, one client partition per entry — the
+   **single source of truth** for the dataset list, read back outside of
+   Flower via `coreopsis.datasets.get_datasets()` /
+   `python -m coreopsis.datasets`),
    `fed-strategy` (`FedAvg`/`FedAvgM`/`FedAdam`), `num-server-rounds`, and the
    `processed-data-dir` / `output-home` / `training-config` paths. Federations
    (`local`/`minimal`/`standard`) under `[tool.flwr.federations]` set supernode
@@ -69,8 +72,9 @@ string; all subcommands are Flower's.
    `local` is the cpu-only one). Override any of these at the CLI with
    `--run-config` / `--federation-config`. Two things that bite:
    `options.num-supernodes` must equal `len(datasets)` — clients index into that
-   list by `partition-id`, so a shorter federation silently drops datasets and a
-   longer one raises `IndexError`; and the order of `datasets` matters, since the
+   list by `partition-id`, so a mismatch now raises in `FlowerClient.__init__`
+   (it used to silently drop trailing datasets when short, `IndexError` when
+   long); and the order of `datasets` matters, since the
    server initializes from the **last** entry while RUNME learns the tokenizer
    from the **first**. `server_app.py` also reads `fraction-fit` /
    `fraction-evaluate` from the run config, but neither is declared in the table,
@@ -122,6 +126,11 @@ in `datasets`).
   (looked up as `Save{fed-strategy}` in the server). Snapshots land in
   `output-home/coreopsis-round-<N>` as HF `save_pretrained` dirs; that name is
   what RUNME's scoring loop consumes as `--model-home`.
+- [src/coreopsis/datasets.py](src/coreopsis/datasets.py) — parses the
+  `datasets` array out of `pyproject.toml` so the `recipes/` scripts and
+  RUNME.sh share one declaration with the Flower app. Inside the client/server
+  apps keep using `context.run_config["datasets"]`, which Flower has already
+  resolved (including any `--run-config` override).
 - [src/coreopsis/task.py](src/coreopsis/task.py) — weight (de)serialization
   to/from numpy (`get_weights`/`set_weights`) and `unpack_context` (resolves
   config/data/output paths from the Flower `Context`).
@@ -174,7 +183,10 @@ evaluated outcomes are the tokenizer-vocabulary tokens matching
 `tokens_of_interest` in `scoring.yaml` (12 patterns: `RESP//imv`,
 `DSCG//expired`, and ten `LABEL//*_init`).
 
-The three datasets are `mimic-icu`, `ucmc-icu`, `nu-icu` (plus a combined `all`).
+The datasets are whatever `pyproject.toml` declares (plus a combined `all`
+built by `cocoa combine-datasets`); as of the `v3` branch that is the two
+single-site cohorts, the per-hospital NU splits, `rush`, and the per-hospital
+eICU splits, all suffixed with the CLIF version.
 `recipes/` scripts are one-off analysis/plotting utilities, not part of the
 installed package. Only `demographics.py` is **not** wired into RUNME.sh. Note
 the path split: `postprocessing.py`, `baselines.py`, and `demographics.py` read

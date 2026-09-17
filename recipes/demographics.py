@@ -18,7 +18,7 @@ hm = (
     / "bbj-lab/users/burkh4rt"
 )
 
-dsets = ("mimic-icu", "ucmc-icu", "nu-icu", "all")
+dsets = os.getenv("dsets_csv").strip(",").split(",") + ["all"]
 
 pt_cols = OmegaConf.load(resources.files("coreopsis.config") / "collation.yaml")[
     "pass_through_columns"
@@ -52,21 +52,19 @@ df_outcomes = pl.concat(
 )
 
 print(
-    df_outcomes.transpose(
-        include_header=True, header_name="outcome", column_names="dataset"
-    )
+    df_outcomes
     # .to_pandas()
     # .to_latex(index=False, float_format="%.3f")
 )
 
 languages = ["english", "spanish"]
-races = ["white", "black or african american", "asian"]
+races = ["white", "black_or_african_american", "asian"]
 df_demog = pl.concat(
     [
         pl.read_parquet(
             list((hm / "processed" / ds).glob("*_for_inference.parquet"))
         ).select(
-            pl.lit(ds).alias("dataset"),
+            pl.lit(ds).str.split("-icu-").list[0].alias("dataset"),
             pl.len().alias("count"),
             pl.col("age_at_admission").mean().alias("age_avg"),
             pl.col("age_at_admission").std().alias("age_std"),
@@ -86,13 +84,18 @@ df_demog = pl.concat(
             .mean()
             .alias("freq_other"),
             *[
-                (pl.col("language_category").str.to_lowercase() == s)
+                (pl.col("language_category").cast(str).str.to_lowercase() == s)
                 .mean()
                 .alias(f"freq_{s}_spk")
                 for s in languages
             ],
             (
-                (~pl.col("language_category").str.to_lowercase().is_in(languages))
+                (
+                    ~pl.col("language_category")
+                    .cast(str)
+                    .str.to_lowercase()
+                    .is_in(languages)
+                )
                 .mean()
                 .alias("freq_other_spk")
             ),
@@ -107,7 +110,7 @@ print(df_demog.to_pandas().to_latex(index=False, float_format="%.3f"))
 df_tkns = pl.concat(
     [
         pl.read_parquet(hm / "processed" / ds / "tokens_times.parquet").select(
-            pl.lit(ds).alias("dataset"),
+            pl.lit(ds).str.split("-icu-").list[0].alias("dataset"),
             pl.len().alias("count"),
             pl.col("tokens").list.len().mean().alias("avg_tkns"),
             pl.col("tokens").list.len().median().alias("med_tkns"),

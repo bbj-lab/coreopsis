@@ -33,7 +33,7 @@ hm = (
     / "bbj-lab/users/burkh4rt"
 )
 
-dsets = ("ucmc-icu", "nu-icu", "mimic-icu")
+dsets = os.getenv("dsets_csv").strip(",").split(",")
 
 grokked_outcome_tokens = [
     x

@@ -58,7 +58,7 @@ tmux new -s co || tmux a -t co
 coreopsis run . | tee "logs/$(date --iso-8601=minutes).stdout"
 ```
 
-This runs the default (`standard`) federation over all three datasets for 10
+This runs the default (`standard`) federation over every declared dataset for 10
 rounds. Logs are not streamed unless `--stream` is passed. Some variations:
 
 ```sh
@@ -300,8 +300,9 @@ Interactive postprocessing:
 systemd-run --scope --user tmux new -s t3q || tmux a -t t3q
 srun -p tier3q \
  --time=8:00:00 \
+ --mem=100GB \
  --job-name=adhoc \
- --pty bash -i
+ --pty=bash -i
 source .venv/bin/activate
 ```
 

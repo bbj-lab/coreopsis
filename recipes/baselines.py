@@ -32,8 +32,7 @@ hm = (
     / "bbj-lab/users/burkh4rt"
 )
 
-dsets = ["ucmc-icu", "nu-icu", "mimic-icu"]
-
+dsets = os.getenv("dsets_csv").strip(",").split(",")
 vocab = OmegaConf.load(hm / "processed" / dsets[0] / "tokenizer.yaml").lookup
 
 grokked_outcome_tokens = [
