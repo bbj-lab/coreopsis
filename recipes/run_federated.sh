@@ -2,10 +2,9 @@
 
 #SBATCH --job-name=coreopsis
 #SBATCH --output=./logs/training-%j.stdout
-#SBATCH --partition=bbj-wanq
-##SBATCH --exclude=cri22cn426
-#SBATCH --gres=gpu:3
-#SBATCH --qos=bbj-wan_priority
+#SBATCH --partition=gpuq
+#SBATCH --qos=priority
+#SBATCH --gres=gpu:4
 #SBATCH --time=12:00:00
 
 export HF_HUB_OFFLINE=1

@@ -62,9 +62,8 @@ string; all subcommands are Flower's.
 
 1. **`pyproject.toml`** `[tool.flwr.app.config]` — top-level federated run
    parameters: `datasets` (JSON array, one client partition per entry — the
-   **single source of truth** for the dataset list, read back outside of
-   Flower via `coreopsis.datasets.get_datasets()` /
-   `python -m coreopsis.datasets`),
+   **single source of truth** for the dataset list, read back outside of Flower
+   via `coreopsis.datasets.get_datasets()` / `python -m coreopsis.datasets`),
    `fed-strategy` (`FedAvg`/`FedAvgM`/`FedAdam`), `num-server-rounds`, and the
    `processed-data-dir` / `output-home` / `training-config` paths. Federations
    (`local`/`minimal`/`standard`) under `[tool.flwr.federations]` set supernode
@@ -74,11 +73,11 @@ string; all subcommands are Flower's.
    `options.num-supernodes` must equal `len(datasets)` — clients index into that
    list by `partition-id`, so a mismatch now raises in `FlowerClient.__init__`
    (it used to silently drop trailing datasets when short, `IndexError` when
-   long); and the order of `datasets` matters, since the
-   server initializes from the **last** entry while RUNME learns the tokenizer
-   from the **first**. `server_app.py` also reads `fraction-fit` /
-   `fraction-evaluate` from the run config, but neither is declared in the table,
-   so both stay at their `1.0` default until you add them there.
+   long); and the order of `datasets` matters, since the server initializes from
+   the **last** entry while RUNME learns the tokenizer from the **first**.
+   `server_app.py` also reads `fraction-fit` / `fraction-evaluate` from the run
+   config, but neither is declared in the table, so both stay at their `1.0`
+   default until you add them there.
 2. **`src/coreopsis/config/*.yaml`** — the cotorra/cocoa configs (`collation`,
    `tokenization`, `winnowing`, `training*`, `extraction`, `scoring`). There are
    three training configs; all define the same small Llama-3.2-1B–derived model
@@ -90,9 +89,6 @@ string; all subcommands are Flower's.
    - `training-no-ckpts.yaml` — federated runs: same model, but eval/save and
      best-model tracking are commented out (the server snapshots each round
      instead).
-   - `training-star.yaml` — the `GEM-*` runs: 5 epochs (top-level `n_epochs: 5`,
-     which cotorra's `Loader` multiplies against `num_train_epochs: 1`),
-     eval/save every 1/5th, plus `time_based_rope` and `neftune_noise_alpha`.
 
    In cotorra, `time_based_rope` is toggled by the mere **presence** of the key
    (see `Trainer.collate_fn` / `Extractor.collate_fn`). `extraction.yaml` sets
@@ -126,11 +122,11 @@ in `datasets`).
   (looked up as `Save{fed-strategy}` in the server). Snapshots land in
   `output-home/coreopsis-round-<N>` as HF `save_pretrained` dirs; that name is
   what RUNME's scoring loop consumes as `--model-home`.
-- [src/coreopsis/datasets.py](src/coreopsis/datasets.py) — parses the
-  `datasets` array out of `pyproject.toml` so the `recipes/` scripts and
-  RUNME.sh share one declaration with the Flower app. Inside the client/server
-  apps keep using `context.run_config["datasets"]`, which Flower has already
-  resolved (including any `--run-config` override).
+- [src/coreopsis/datasets.py](src/coreopsis/datasets.py) — parses the `datasets`
+  array out of `pyproject.toml` so the `recipes/` scripts and RUNME.sh share one
+  declaration with the Flower app. Inside the client/server apps keep using
+  `context.run_config["datasets"]`, which Flower has already resolved (including
+  any `--run-config` override).
 - [src/coreopsis/task.py](src/coreopsis/task.py) — weight (de)serialization
   to/from numpy (`get_weights`/`set_weights`) and `unpack_context` (resolves
   config/data/output paths from the Flower `Context`).
@@ -183,18 +179,18 @@ evaluated outcomes are the tokenizer-vocabulary tokens matching
 `tokens_of_interest` in `scoring.yaml` (12 patterns: `RESP//imv`,
 `DSCG//expired`, and ten `LABEL//*_init`).
 
-The datasets are whatever `pyproject.toml` declares (plus a combined `all`
-built by `cocoa combine-datasets`); as of the `v3` branch that is the two
-single-site cohorts, the per-hospital NU splits, `rush`, and the per-hospital
-eICU splits, all suffixed with the CLIF version.
-`recipes/` scripts are one-off analysis/plotting utilities, not part of the
-installed package. Only `demographics.py` is **not** wired into RUNME.sh. Note
-the path split: `postprocessing.py`, `baselines.py`, and `demographics.py` read
-and write the cluster share (`/gpfs/data` or `/mnt` + `bbj-lab/users/burkh4rt`),
-while `tokenwise.py` and `plotting.py` resolve everything under `~/Downloads`.
-RUNME.sh runs `baselines` → `postprocessing` → `tokenwise` → `plotting` back to
-back, so the last two only work once their inputs have been copied down — in
-practice the tables and figures get made locally.
+The datasets are whatever `pyproject.toml` declares (plus a combined `all` built
+by `cocoa combine-datasets`); as of the `v3` branch that is the two single-site
+cohorts, the per-hospital NU splits, `rush`, and the per-hospital eICU splits,
+all suffixed with the CLIF version. `recipes/` scripts are one-off
+analysis/plotting utilities, not part of the installed package. Only
+`demographics.py` is **not** wired into RUNME.sh. Note the path split:
+`postprocessing.py`, `baselines.py`, and `demographics.py` read and write the
+cluster share (`/gpfs/data` or `/mnt` + `bbj-lab/users/burkh4rt`), while
+`tokenwise.py` and `plotting.py` resolve everything under `~/Downloads`. RUNME.sh
+runs `baselines` → `postprocessing` → `tokenwise` → `plotting` back to back, so
+the last two only work once their inputs have been copied down — in practice the
+tables and figures get made locally.
 
 ## Conventions
 

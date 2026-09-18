@@ -306,16 +306,16 @@ srun -p tier3q \
 source .venv/bin/activate
 ```
 
-#SBATCH --partition=bbj-wanq
-#SBATCH --qos=bbj-wan_priority
+#SBATCH --partition=bbjq
+#SBATCH --qos=bbj_priority
 #SBATCH --gres=gpu:1
 #SBATCH --time=1-00:00:00
 
 With gpu:
 ```
 systemd-run --scope --user tmux new -s g1 || tmux a -t g1
-srun -p bbj-wanq \
- --qos=bbj-wan_priority \
+srun -p bbjq \
+ --qos=bbj_priority \
  --gres=gpu:1 \
  --time=8:00:00 \
  --job-name=adhoc \

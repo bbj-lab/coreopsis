@@ -9,7 +9,7 @@ model:
     num_attention_heads: 8
 
 max_seq_len: !!int &max_len 4096
-n_epochs: !!int 1
+n_epochs: !!int 10
 run_name: &run_name cotorra
 
 tokens_of_interest: &tois
@@ -23,6 +23,9 @@ wandb:
   run_name: *run_name
 
 custom_loss: !!bool false
+
+time_based_rope:
+  sec_per_pos_id: !!int 300
 
 training_args:
   report_to: none # wandb

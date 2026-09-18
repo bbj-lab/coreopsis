@@ -2,8 +2,8 @@
 
 #SBATCH --job-name=coreopsis
 #SBATCH --output=./logs/training-%j.stdout
-#SBATCH --partition=bbj-wanq
-#SBATCH --qos=bbj-wan_priority
+#SBATCH --partition=bbjq
+#SBATCH --qos=bbj_priority
 #SBATCH --gres=gpu:1
 #SBATCH --time=12:00:00
 

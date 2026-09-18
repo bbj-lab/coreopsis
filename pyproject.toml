@@ -64,14 +64,7 @@
         serverapp = "coreopsis.server_app:app"
 
     [tool.flwr.app.config]
-        # the single source of truth for the dataset list: one client partition
-        # per entry, and `options.num-supernodes` below must match its length.
-        # order matters -- RUNME.sh learns the tokenizer from the first entry,
-        # `server_app` initializes the model from the last. read it back outside
-        # of flower with `coreopsis.datasets.get_datasets()` /
-        # `python -m coreopsis.datasets`; override per-run with
-        # `--run-config "'datasets'='[...]'"`
-        datasets           = '''
+        datasets = '''
         [
             "mimic-icu-3.0.0", "ucmc-icu-3.0.0", "nu_cdh-icu-3.0.0", "nu_dh-icu-3.0.0",
             "nu_hh-icu-3.0.0", "nu_kh-icu-3.0.0", "nu_lfh-icu-3.0.0",
@@ -89,11 +82,11 @@
             "eicu-458-icu-3.0.0"
         ]
         '''
-        fed-strategy       = "FedAvg"                               # options: FedAvg, FedAvgM, FedAdam
-        num-server-rounds  = 10
-        output-home        = "./output/"
-        processed-data-dir = "./processed/"
-        training-config    = "./src/coreopsis/config/training.yaml"
+        fed-strategy = "FedAvg" # options: FedAvg, FedAvgM, FedAdam
+        num-server-rounds = 10
+        output-home = "output"
+        processed-data-dir = "processed"
+        training-config = "src/coreopsis/config/training.yaml"
 
 [tool.flwr.federations]
     default = "standard"
@@ -101,17 +94,17 @@
     [tool.flwr.federations.local]
         options.backend.client-resources.num-cpus = 0.3
         options.backend.client-resources.num-gpus = 0
-        options.num-supernodes                    = 3
+        options.num-supernodes                    = 42
 
     [tool.flwr.federations.minimal]
         options.backend.client-resources.num-cpus = 1
         options.backend.client-resources.num-gpus = 1
-        options.num-supernodes                    = 3
+        options.num-supernodes                    = 42
 
     [tool.flwr.federations.standard]
         options.backend.client-resources.num-cpus = 1
         options.backend.client-resources.num-gpus = 1
-        options.num-supernodes                    = 3
+        options.num-supernodes                    = 42
 
 [tool.ruff]
     extend-exclude = [ "*.md" ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-load MIMIC, UCMC, & NU;
+load data,
 select patients' first hospitalizations,
 restrict to ones >=24h that involve an ICU admission in the first 24h
 """
@@ -23,6 +23,7 @@ vers = "3.0.0"
 def get_cohort(df_hosp: pl.LazyFrame, df_adt: pl.LazyFrame, h_name: str):
     return (
         df_hosp.drop("__index_level_0__", strict=False)
+        .drop_nulls(subset=["patient_id", "discharge_dttm", "admission_dttm"])
         .sort(pl.col("admission_dttm"))
         .group_by("patient_id")
         .first()
@@ -55,10 +56,14 @@ def get_cohort(df_hosp: pl.LazyFrame, df_adt: pl.LazyFrame, h_name: str):
 
 
 def prep_file(f: pathlib.Path, df_cohort: pl.LazyFrame, out_dir: pathlib.Path):
+    # Patient demographics also pass through to the combined processed data.
+    df = (
+        pl.scan_parquet(f)
+        .drop("__index_level_0__", strict=False)
+        .with_columns(pl.selectors.by_dtype(pl.Null).cast(pl.String))
+    )
     try:  # hospitalization level
-        pl.scan_parquet(f).drop("__index_level_0__", strict=False).cast(
-            {"hospitalization_id": str}
-        ).join(
+        df.cast({"hospitalization_id": str}).join(
             df_cohort.select("hospitalization_id"),
             on="hospitalization_id",
             validate="m:1",
@@ -66,9 +71,7 @@ def prep_file(f: pathlib.Path, df_cohort: pl.LazyFrame, out_dir: pathlib.Path):
         print(f"Processed {f.name} at hospitalization-level.")
     except pl.exceptions.ColumnNotFoundError:  # patient level
         try:
-            pl.scan_parquet(f).drop("__index_level_0__", strict=False).cast(
-                {"patient_id": str}
-            ).join(
+            df.cast({"patient_id": str}).join(
                 df_cohort.select("patient_id"), on="patient_id", validate="m:1"
             ).sink_parquet(out_dir / f.name)
             print(f"Processed {f.name} at patient-level.")

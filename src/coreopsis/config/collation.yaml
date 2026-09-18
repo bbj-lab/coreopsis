@@ -4,6 +4,7 @@ subject_id: hospitalization_id # the atomic unit of interest
 group_id: patient_id # multiple subjects can belong to a group
 default_timezone: UTC # CLIF standard
 default_time_unit: ms # options: 'us', 'ns', 'ms'
+drop_duplicate_events: false
 
 subject_splits:
   train_frac: !!float 0.7
@@ -59,6 +60,11 @@ entries:
     prefix: ADMN
     code: admission_type_category
     time: admission_dttm
+
+  - table: clif_adt
+    prefix: HOSP
+    code: hospital_id
+    time: in_dttm
 
   - table: clif_adt
     prefix: XFR-IN
