@@ -7,8 +7,8 @@
 #SBATCH --gres=gpu:4
 #SBATCH --time=12:00:00
 
-export HF_HUB_OFFLINE=1
-export WANDB_MODE=offline
+# export HF_HUB_OFFLINE=1
+# export WANDB_MODE=offline
 
 source ~/.bashrc
 source .venv/bin/activate
@@ -20,7 +20,7 @@ coreopsis run . standard \
 				 'output-home'='${output_home:-./output/c-fedavg10}'
 				 'num-server-rounds'=${num_server_rounds:-10}
 				 'datasets'='[$dsets_cfg]'
-				 'training-config'='./src/coreopsis/config/training-no-ckpts.yaml'
+				 'training-config'='./src/coreopsis/config/training.yaml'
 				 " \
 	--federation-config "
 						options.num-supernodes=${nsets}

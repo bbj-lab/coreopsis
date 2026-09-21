@@ -63,14 +63,16 @@ cocoa combine-datasets \
 	--output-data-dir processed/all-icu-3.0.0 \
 	2>&1 | tee logs/combining.log
 
-# # train separate models on each dataset
-# for ds in "${dsets[@]}" "all-icu-3.0.0"; do
-# 	sbatch --export=ALL,ds=$ds,config_home=$config_home \
-# 		recipes/run_training.sh
-# done
+# train separate models on each dataset
+for ds in "${dsets[@]}" "all-icu-3.0.0"; do
+	sbatch --export=ALL,ds=$ds,config_home=$config_home \
+		recipes/run_training.sh
+done
 
 export num_server_rounds=30
 nsets=${#dsets[@]}
+dsets_cfg=$(printf '"%s",' "${dsets[@]}")
+dsets_cfg=${dsets_cfg%,}
 output_home="output/c-fedavg${num_server_rounds}"
 export dsets nsets dsets_cfg output_home
 sbatch --export=ALL \
