@@ -7,11 +7,11 @@
 
 source .venv/bin/activate
 
-dsets=(mimic-icu ucmc-icu nu-icu)
+dsets=(mimic-icu ucmc-icu nu-icu rush-icu)
 export config_home=./src/coreopsis/config
 
 # harmonize medicines / respiratory data / sofa scoring with clifpy
-for h in mimic ucmc nu; do
+for h in mimic ucmc nu rush; do
 	python recipes/run_clifpy.py \
 		--data_dir "./data-raw/${h}-2.1.0" \
 		--out_dir /scratch/$(whoami) \
@@ -155,6 +155,27 @@ for fed_strategy in FedAvgM FedAdam; do
 	sbatch --export=ALL \
 		--gres=gpu:$nsets \
 		recipes/run_federated.sh
+done
+
+for ds in rush-icu; do
+	mdls=(
+		cxxx-all-005/mdl-cotorra
+		c-fedavg10/coreopsis-round-10
+		c-all/mdl-cotorra
+	)
+	for mdl in "${mdls[@]}"; do
+		cotorra extract \
+			--extraction-config ${config_home}/extraction.yaml \
+			--processed-data-home ./processed/${ds} \
+			--model-home ./output/${mdl} \
+			--output-home "./processed/${ds}/mdl-$(dirname ${mdl})"
+		cp ./processed/${ds}/*.{yaml,parquet} "./processed/${ds}/mdl-$(dirname ${mdl})"
+		cotorra rep-based-score \
+			--scoring-config ${config_home}/scoring.yaml \
+			--processed-data-home "./processed/${ds}/mdl-$(dirname ${mdl})" \
+			--model-home ./output/${mdl} \
+			--estimator logistic-CV
+	done
 done
 
 # rep-based scoring

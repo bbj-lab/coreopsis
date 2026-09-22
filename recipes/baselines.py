@@ -32,7 +32,7 @@ hm = (
     / "bbj-lab/users/burkh4rt"
 )
 
-dsets = ["ucmc-icu", "nu-icu", "mimic-icu"]
+dsets = ["ucmc-icu", "nu-icu", "mimic-icu", "rush-icu"]
 
 vocab = OmegaConf.load(hm / "processed" / dsets[0] / "tokenizer.yaml").lookup
 

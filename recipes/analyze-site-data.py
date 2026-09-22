@@ -10,6 +10,7 @@ import pathlib
 from itertools import combinations
 
 import numpy as np
+import plotly.express as px
 import plotly.graph_objects as go
 import polars as pl
 import torch
@@ -63,9 +64,10 @@ colors = {
 # the round sweep, so a site keeps its color from figure to figure. this dict
 # also fixes the order the sites appear in everywhere below
 sites = {
-    "ucmc-icu": ("UCMC", colors["lake"]),
-    "nu-icu": ("NU", colors["terracotta"]),
-    "mimic-icu": ("MIMIC", colors["forest"]),
+    "ucmc-icu": ("UCMC", "#800000"),
+    "nu-icu": ("NU", "#4E2A84"),
+    "rush-icu": ("RUSH", "#006937"),
+    "mimic-icu": ("MIMIC", "#0069b4"),
 }
 n_sites = len(sites)
 
@@ -148,7 +150,7 @@ def wasserstein1(p, q):
 
 
 dists = {}  # group -> (bin labels, {dataset: distribution over those bins})
-divergence = {}  # group -> mean pairwise W1 across the three sites
+divergence = {}  # group -> mean pairwise W1 across the sites
 
 for group in sorted(qtokens["group"].unique().to_list()):
     wide = (
@@ -262,6 +264,16 @@ fig.write_image(hm / "W1-distribution-analysis.pdf")
 cross-site next-token loss of the single-site models
 """
 
+# every site supplies eval timelines, but a site only supplies a row of the
+# matrix if a single-site model was trained on it; rush-icu has none, so it
+# appears as an eval column only
+eval_only = ("rush-icu",)
+model_sites = {ds: v for ds, v in sites.items() if ds not in eval_only}
+n_models = len(model_sites)
+# columns keep the usual site order, except that the eval-only sites are moved
+# to the right of the ones that also supply a row
+eval_sites = model_sites | {ds: v for ds, v in sites.items() if ds in eval_only}
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 n_sampled = 5000  # timelines sampled per site
 max_len = 4096  # context window; longer timelines are truncated
@@ -297,7 +309,7 @@ samples = {
 }
 
 nll = {}
-for model_ds in sites:
+for model_ds in model_sites:
     model = (
         AutoModelForCausalLM.from_pretrained(
             hm / "output" / f"c-{model_ds}" / "mdl-cotorra"
@@ -305,7 +317,7 @@ for model_ds in sites:
         .to(device)
         .eval()
     )
-    for eval_ds in sites:
+    for eval_ds in eval_sites:
         nll[model_ds, eval_ds] = mean_nll(model, samples[eval_ds])
     del model
     if device == "cuda":
@@ -314,44 +326,43 @@ for model_ds in sites:
 nll_matrix = pl.DataFrame(
     [
         {"model_site": model_ds}
-        | {eval_ds: nll[model_ds, eval_ds] for eval_ds in sites}
-        for model_ds in sites
+        | {eval_ds: nll[model_ds, eval_ds] for eval_ds in eval_sites}
+        for model_ds in model_sites
     ]
 )
 nll_matrix.write_csv(hm / "cross-site-nll.csv")
 print(nll_matrix)
 
-fig_width = 760
 s = 650 / 900
+cell = 142  # px per cell, so the cells stay square as sites are added
+margin = dict(l=150, r=40, t=170, b=40)
 
-m = np.array([[nll[model_ds, eval_ds] for eval_ds in sites] for model_ds in sites])
+m = np.array(
+    [[nll[model_ds, eval_ds] for eval_ds in eval_sites] for model_ds in model_sites]
+)
 
 # the matrix itself is the only thing that gets a fill; the trailing mean row
 # and column are left unfilled (nan) so they read as marginals rather than as
 # more cells on the same scale
-z = np.full((n_sites + 1, n_sites + 1), np.nan)
-z[:n_sites, :n_sites] = m
+z = np.full((n_models + 1, n_sites + 1), np.nan)
+z[:n_models, :n_sites] = m
 shown = z.copy()
-shown[:n_sites, n_sites] = m.mean(axis=1)  # per model, over eval sites
-shown[n_sites, :n_sites] = m.mean(axis=0)  # per eval site, over models
-shown[n_sites, n_sites] = m.mean()
+shown[:n_models, n_sites] = m.mean(axis=1)  # per model, over eval sites
+shown[n_models, :n_sites] = m.mean(axis=0)  # per eval site, over models
+shown[n_models, n_sites] = m.mean()
 
-labels = [name for name, _ in sites.values()] + ["mean"]
+x_labels = [name for name, _ in eval_sites.values()] + ["mean"]
+y_labels = [name for name, _ in model_sites.values()] + ["mean"]
 lo, hi = m.min(), m.max()
 text_flips = 0.5  # normalized value above which cell text goes white
 
 fig = go.Figure(
     go.Heatmap(
         z=z,
-        x=labels,
-        y=labels,
+        x=x_labels,
+        y=y_labels,
         # single-hue sequential ramp, light -> dark, drawn from the lake family
-        colorscale=[
-            (0.0, tint(colors["lake_light"], 0.85)),
-            (0.4, colors["lake_light"]),
-            (0.75, colors["lake"]),
-            (1.0, colors["lake_dark"]),
-        ],
+        colorscale=px.colors.sequential.Viridis,
         showscale=False,  # every cell is labeled, so a colorbar adds nothing
         xgap=2,
         ygap=2,
@@ -359,15 +370,18 @@ fig = go.Figure(
     )
 )
 
-for i in range(n_sites + 1):
+for i in range(n_models + 1):
     for j in range(n_sites + 1):
         v = shown[i, j]
-        in_matrix = i < n_sites and j < n_sites
-        # bold the diagonal (each model on its own site) and the marginals
+        in_matrix = i < n_models and j < n_sites
+        # the matrix is no longer square, so "a model on its own site" is a
+        # match between the row's and the column's dataset, not i == j
+        own_site = in_matrix and list(model_sites)[i] == list(eval_sites)[j]
+        # bold the own-site cells and the marginals
         fig.add_annotation(
-            x=labels[j],
-            y=labels[i],
-            text=f"{v:.3f}" if in_matrix and i != j else f"<b>{v:.3f}</b>",
+            x=x_labels[j],
+            y=y_labels[i],
+            text=f"{v:.3f}" if in_matrix and not own_site else f"<b>{v:.3f}</b>",
             showarrow=False,
             font=dict(
                 size=24 * s,
@@ -382,11 +396,13 @@ for i in range(n_sites + 1):
 # through the category centers, not between them. the marginals still get no
 # rule of their own setting them off -- they are the only unfilled cells in the
 # grid, which already reads as a break
-edges = [i - 0.5 for i in range(n_sites + 2)]  # cell boundaries, outer included
+x_edges = [i - 0.5 for i in range(n_sites + 2)]  # boundaries, outer included
+y_edges = [i - 0.5 for i in range(n_models + 2)]
 rule = dict(line=dict(color=colors["greystone"], width=1.5), layer="above")
-for e in edges:
-    fig.add_shape(type="line", x0=e, x1=e, y0=edges[0], y1=edges[-1], **rule)
-    fig.add_shape(type="line", x0=edges[0], x1=edges[-1], y0=e, y1=e, **rule)
+for e in x_edges:
+    fig.add_shape(type="line", x0=e, x1=e, y0=y_edges[0], y1=y_edges[-1], **rule)
+for e in y_edges:
+    fig.add_shape(type="line", x0=x_edges[0], x1=x_edges[-1], y0=e, y1=e, **rule)
 
 fig.update_xaxes(
     side="top", title_text="eval site", showgrid=False, zeroline=False, ticks=""
@@ -404,9 +420,10 @@ fig.update_layout(
         family="Gotham Book, Gotham, Helvetica, sans-serif", size=30 * s, color="black"
     ),
     title=None,
-    # margins sized so the plotting area comes out square, i.e. so do the cells
-    margin=dict(l=150, r=40, t=170, b=40),
-    width=fig_width,
-    height=780,
+    # the plotting area is sized off the cell count rather than fixed, since
+    # there is one fewer model site than eval site
+    margin=margin,
+    width=cell * (n_sites + 1) + margin["l"] + margin["r"],
+    height=cell * (n_models + 1) + margin["t"] + margin["b"],
 )
 fig.write_image(hm / "cross-site-nll.pdf")

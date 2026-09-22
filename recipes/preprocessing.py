@@ -18,7 +18,7 @@ hm = (
 )
 data_raw = hm / "data-raw"
 
-for h in ("mimic", "ucmc", "nu"):
+for h in ("mimic", "ucmc", "nu", "rush"):
     cohort = (
         pl.read_parquet(data_raw / f"{h}-2.1.0" / "clif_hospitalization.parquet")
         .drop("__index_level_0__", strict=False)

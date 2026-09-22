@@ -193,47 +193,47 @@ entries:
     numeric_value: tidal_volume_set
     time: recorded_dttm
 
-  - table: clif_sofa
-    prefix: SOFA
-    filter_expr: pl.col("sofa_cv_97") > 0
-    with_col_expr: (pl.lit("cv-") + pl.col("sofa_cv_97").cast(str)).alias("cv")
-    code: cv
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: SOFA
+  #   filter_expr: pl.col("sofa_cv_97") > 0
+  #   with_col_expr: (pl.lit("cv-") + pl.col("sofa_cv_97").cast(str)).alias("cv")
+  #   code: cv
+  #   time: event_time
 
-  - table: clif_sofa
-    prefix: SOFA
-    filter_expr: pl.col("sofa_cns") > 0
-    with_col_expr: (pl.lit("cns-") + pl.col("sofa_cns").cast(str)).alias("cns")
-    code: cns
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: SOFA
+  #   filter_expr: pl.col("sofa_cns") > 0
+  #   with_col_expr: (pl.lit("cns-") + pl.col("sofa_cns").cast(str)).alias("cns")
+  #   code: cns
+  #   time: event_time
 
-  - table: clif_sofa
-    prefix: SOFA
-    filter_expr: pl.col("sofa_coag") > 0
-    with_col_expr: (pl.lit("coag-") + pl.col("sofa_coag").cast(str)).alias("coag")
-    code: coag
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: SOFA
+  #   filter_expr: pl.col("sofa_coag") > 0
+  #   with_col_expr: (pl.lit("coag-") + pl.col("sofa_coag").cast(str)).alias("coag")
+  #   code: coag
+  #   time: event_time
 
-  - table: clif_sofa
-    prefix: SOFA
-    filter_expr: pl.col("sofa_liver") > 0
-    with_col_expr: (pl.lit("liver-") + pl.col("sofa_liver").cast(str)).alias("liver")
-    code: liver
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: SOFA
+  #   filter_expr: pl.col("sofa_liver") > 0
+  #   with_col_expr: (pl.lit("liver-") + pl.col("sofa_liver").cast(str)).alias("liver")
+  #   code: liver
+  #   time: event_time
 
-  - table: clif_sofa
-    prefix: SOFA
-    filter_expr: pl.col("sofa_renal") > 0
-    with_col_expr: (pl.lit("renal-") + pl.col("sofa_renal").cast(str)).alias("renal")
-    code: renal
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: SOFA
+  #   filter_expr: pl.col("sofa_renal") > 0
+  #   with_col_expr: (pl.lit("renal-") + pl.col("sofa_renal").cast(str)).alias("renal")
+  #   code: renal
+  #   time: event_time
 
-  - table: clif_sofa
-    prefix: SOFA
-    filter_expr: pl.col("sofa_resp") > 0
-    with_col_expr: (pl.lit("resp-") + pl.col("sofa_resp").cast(str)).alias("resp")
-    code: resp
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: SOFA
+  #   filter_expr: pl.col("sofa_resp") > 0
+  #   with_col_expr: (pl.lit("resp-") + pl.col("sofa_resp").cast(str)).alias("resp")
+  #   code: resp
+  #   time: event_time
 
   - table: clif_vitals
     prefix: VTL
@@ -377,12 +377,12 @@ entries:
     time: recorded_dttm
 
   # 1st sepsis event
-  - table: clif_sofa
-    prefix: LABEL
-    filter_expr: pl.col("sofa_total") >= 2
-    with_col_expr: pl.lit("sepsis_onset").alias("code")
-    agg_expr:
-      - pl.col("code").sort_by("event_time").first()
-      - pl.col("event_time").min()
-    code: code
-    time: event_time
+  # - table: clif_sofa
+  #   prefix: LABEL
+  #   filter_expr: pl.col("sofa_total") >= 2
+  #   with_col_expr: pl.lit("sepsis_onset").alias("code")
+  #   agg_expr:
+  #     - pl.col("code").sort_by("event_time").first()
+  #     - pl.col("event_time").min()
+  #   code: code
+  #   time: event_time

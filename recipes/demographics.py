@@ -18,7 +18,7 @@ hm = (
     / "bbj-lab/users/burkh4rt"
 )
 
-dsets = ("mimic-icu", "ucmc-icu", "nu-icu", "all")
+dsets = ("mimic-icu", "ucmc-icu", "nu-icu", "rush-icu", "all")
 
 pt_cols = OmegaConf.load(resources.files("coreopsis.config") / "collation.yaml")[
     "pass_through_columns"

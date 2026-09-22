@@ -305,8 +305,7 @@ if __name__ == "__main__":
     tkwz_pr.to_csv(hm / "tkwz-pr.csv")
 
     xfer_roc, xfer_pr = get_all_cis(
-        dsets,
-        [f"mdl-c-{ds}" for ds in list(dsets)] + [f"mdl-cxxx-{ds}-005" for ds in dsets],
+        dsets + ("rush-icu",), ["mdl-c-fedavg10", "mdl-cxxx-all-005"]
     )
     xfer_roc.map(mid)
 
