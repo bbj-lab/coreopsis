@@ -302,7 +302,7 @@ srun -p tier3q \
  --time=8:00:00 \
  --mem=100GB \
  --job-name=adhoc \
- --pty=bash -i
+ --pty bash -i
 source .venv/bin/activate
 ```
 

@@ -26,4 +26,5 @@ coreopsis run . standard \
 						options.num-supernodes=${nsets}
 						options.backend.client-resources.num-cpus=1
 						options.backend.client-resources.num-gpus=1
-						"
+						" \
+	2>&1 | tee ./logs/federated.log

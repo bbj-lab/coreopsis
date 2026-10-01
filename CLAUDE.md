@@ -114,8 +114,33 @@ in `datasets`).
   **shard** of the dataset (`num_shards = num-server-rounds`, `index = round-1`),
   so one full pass over the data is spread across all rounds. Because the
   `Trainer` is rebuilt each round, the decay multiplies the config's
-  `learning_rate` rather than compounding. `self.loader` and `self.model` are
-  assigned in `__init__` and never used — vestigial, not a hook.
+  `learning_rate` rather than compounding. Both `fit` and `evaluate` end in a
+  `finally: self._release()`, which is **load-bearing**, not hygiene. A client's
+  model is pinned by two separate things that outlive the client, and the GPU
+  fills up within a round or two if either survives:
+  1. cotorra hands hf's `Trainer` its own bound `collate_fn`/`model_init` as
+     `data_collator`/`model_init`, so the two objects hold each other and
+     refcounting alone never frees the model hf put on the GPU.
+  2. accelerate's `GradientState` keeps `_shared_state` on the **class**, and
+     `train()` returns without clearing this round's dataloader out of its
+     `dataloader_references`. That dataloader's collate_fn is the same bound
+     method, so a process-global pins the whole graph — weights, grads, and
+     optimizer state, ~1.3 GB per client. Nulling attributes on the client cannot
+     reach it; `_release` calls `accelerator.free_memory()` and resets
+     `active_dataloader`/`dataloader_references` to their post-`__init__` state.
+
+  One `ClientAppActor` serves **every** client whenever
+  `client-resources.num-gpus` is the whole device (Ray can then schedule only one
+  actor), so all 42 datasets × both fit and evaluate share one process and one
+  allocator. `_release` logs `released <id> (pid=N), X.XX GiB still allocated`;
+  that number should stay flat near zero, and a climbing one means a new
+  retainer. Verified by driving several trainers back to back on CPU and counting
+  live `LlamaForCausalLM` objects after each — the reference graph is
+  device-independent, so this is testable without a GPU. `server_fn` breaks cycle
+  (1) after `model_init()`; it never calls `train()`, so (2) does not apply
+  there. (`self.loader`/`self.model`, noted here previously as vestigial, are
+  gone; cotorra's `Trainer` builds its own `Loader`.)
+
 - [src/coreopsis/save_model_strategy.py](src/coreopsis/save_model_strategy.py) —
   `SaveModelMixin` composes with any Flower strategy to snapshot the aggregated
   model after each round, yielding `SaveFedAvg`/`SaveFedAvgM`/`SaveFedAdam`
