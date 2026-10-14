@@ -8,6 +8,7 @@ import argparse
 import pathlib
 
 import clifpy as cp
+from clifpy.utils.sofa import REQUIRED_SOFA_CATEGORIES_BY_TABLE
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -28,6 +29,16 @@ co = cp.ClifOrchestrator(
     output_directory=str(out_dir),
 )
 
+# load the vitals that sofa reads, along with the weights the dose conversion
+# needs, before converting: left to itself, the conversion loads only weights,
+# and compute_sofa_scores then reuses that table, finding no map or spo2
+co.load_table(
+    "vitals",
+    filters={
+        "vital_category": [*REQUIRED_SOFA_CATEGORIES_BY_TABLE["vitals"], "weight_kg"]
+    },
+)
+
 co.convert_dose_units_for_continuous_meds(
     preferred_units={
         "norepinephrine": "mcg/kg/min",
@@ -40,11 +51,16 @@ co.convert_dose_units_for_continuous_meds(
 
 sofa_scores = co.compute_sofa_scores()
 
+# co.sofa_df has encounter_block as a column and a plain RangeIndex, so merge on
+# the column; join(on=...) would match block ids against row positions instead
 sofa_df = (
     co.wide_df.sort_values("event_time")
-    .groupby("encounter_block")
-    .agg({"event_time": "max", "hospitalization_id": "last"})
-    .join(co.sofa_df, how="inner", on="encounter_block", validate="1:1")
+    .groupby("encounter_block", as_index=False)
+    .agg(
+        event_time=("event_time", "max"),
+        hospitalization_id=("hospitalization_id", "last"),
+    )
+    .merge(co.sofa_df, how="inner", on="encounter_block", validate="1:1")
 )
 
 sofa_df.to_parquet(out_loc := data_dir / "clif_sofa.parquet")
