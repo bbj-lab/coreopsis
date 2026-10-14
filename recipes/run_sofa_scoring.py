@@ -29,11 +29,13 @@ co = cp.ClifOrchestrator(
     output_directory=str(out_dir),
 )
 
-# load the vitals that sofa reads, along with the weights the dose conversion
-# needs, before converting: left to itself, the conversion loads only weights,
-# and compute_sofa_scores then reuses that table, finding no map or spo2
+# load the vitals that sofa reads, with the weights the dose conversion needs,
+# before converting: left to itself, the conversion loads only weights, and
+# compute_sofa_scores then reuses that table, finding no map or spo2 (only the
+# columns either step reads, to save memory)
 co.load_table(
     "vitals",
+    columns=["hospitalization_id", "recorded_dttm", "vital_category", "vital_value"],
     filters={
         "vital_category": [*REQUIRED_SOFA_CATEGORIES_BY_TABLE["vitals"], "weight_kg"]
     },
