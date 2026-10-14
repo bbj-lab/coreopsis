@@ -53,8 +53,6 @@ co.convert_dose_units_for_continuous_meds(
 
 sofa_scores = co.compute_sofa_scores()
 
-# co.sofa_df has encounter_block as a column and a plain RangeIndex, so merge on
-# the column; join(on=...) would match block ids against row positions instead
 sofa_df = (
     co.wide_df.sort_values("event_time")
     .groupby("encounter_block", as_index=False)
